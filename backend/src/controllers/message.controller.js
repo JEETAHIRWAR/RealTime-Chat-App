@@ -1,5 +1,7 @@
 const Message = require("../models/message.model");
-
+const {
+    decryptMessage
+} = require("../utils/encryption");
 
 
 /*
@@ -47,10 +49,10 @@ exports.getMessages = async (req, res) =>
 
 
         /*
-        ========================================
-        FIND CONVERSATION
-        ========================================
-        */
+========================================
+FIND CONVERSATION
+========================================
+*/
         const messages = await Message.find({
 
             $or: [
@@ -75,6 +77,29 @@ exports.getMessages = async (req, res) =>
 
             .limit(limit);
 
+
+
+
+        /*
+        ========================================
+        DECRYPT ALL MESSAGES
+        ========================================
+        */
+        const decryptedMessages =
+            messages.map((msg) =>
+            {
+
+                const messageObj =
+                    msg.toObject();
+
+                messageObj.message =
+                    decryptMessage(
+                        messageObj.message
+                    );
+
+                return messageObj;
+
+            });
 
 
 
@@ -122,7 +147,7 @@ exports.getMessages = async (req, res) =>
                 totalMessages / limit
             ),
 
-            messages: messages.reverse()
+            messages: decryptedMessages.reverse()
 
         });
 

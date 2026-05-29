@@ -1,21 +1,53 @@
 /*
 ========================================
-MESSAGE MODEL
+SOCKET AUTH MIDDLEWARE
 ========================================
 */
-const Message = require("../models/message.model");
+const socketAuth = require(
+    "./middleware/socketAuth"
+);
+
+/*
+========================================
+Messages Encrypted
+========================================
+*/
+const {
+    encryptMessage,
+    decryptMessage
+} = require("../utils/encryption");
 
 
 
 /*
 ========================================
-ONLINE USERS MAP
-========================================
-Stores:
-userId -> socketId
+ONLINE USERS MANAGER
 ========================================
 */
-const onlineUsers = {};
+const {
+
+    addUserSocket,
+    removeUserSocket,
+    getOnlineUsers
+
+} = require(
+    "./managers/onlineUsers.manager"
+);
+
+
+
+/*
+========================================
+MESSAGE MODEL
+========================================
+*/
+const {
+
+    sendMessageService
+
+} = require(
+    "../services/message.service"
+);
 
 
 
@@ -23,29 +55,65 @@ const onlineUsers = {};
 ========================================
 SOCKET HANDLER
 ========================================
-This file handles:
-- realtime socket connections
-- online users
-- private messaging
-- disconnect cleanup
-- socket events
-========================================
 */
 const socketHandler = (io) =>
 {
 
     /*
     ========================================
-    CONNECTION EVENT
+    SOCKET AUTH MIDDLEWARE
     ========================================
-    Runs whenever a new user connects
+    */
+    io.use(socketAuth);
+
+
+
+    /*
+    ========================================
+    CONNECTION EVENT
     ========================================
     */
     io.on("connection", (socket) =>
     {
 
+        /*
+        ========================================
+        AUTHENTICATED USER
+        ========================================
+        */
+        const userId = socket.user.id;
+
+
+
         console.log(
-            "User Connected:",
+            `User Connected: ${userId}`
+        );
+
+
+
+        /*
+        ========================================
+        JOIN PERSONAL ROOM
+        ========================================
+
+        WHY?
+        - multi-device support
+        - scalable messaging
+        - redis-ready architecture
+
+        ========================================
+        */
+        socket.join(userId);
+
+
+
+        /*
+        ========================================
+        STORE USER SOCKET
+        ========================================
+        */
+        addUserSocket(
+            userId,
             socket.id
         );
 
@@ -53,36 +121,13 @@ const socketHandler = (io) =>
 
         /*
         ========================================
-        USER CONNECTED EVENT
-        ========================================
-        Frontend sends logged-in userId
+        SEND ONLINE USERS
         ========================================
         */
-        socket.on("user_connected", (userId) =>
-        {
-
-            // STORE USER
-            onlineUsers[userId] = socket.id;
-
-
-            console.log(
-                "Online Users:",
-                onlineUsers
-            );
-
-
-            /*
-            ========================================
-            SEND ONLINE USERS TO ALL CLIENTS
-            ========================================
-            */
-            io.emit(
-                "online_users",
-                onlineUsers
-            );
-
-        });
-
+        io.emit(
+            "online_users",
+            getOnlineUsers()
+        );
 
 
 
@@ -90,94 +135,125 @@ const socketHandler = (io) =>
         ========================================
         SEND MESSAGE EVENT
         ========================================
-        Handles:
-        - save message in DB
-        - send realtime message
-        ========================================
         */
-        socket.on("send_message", async (data) =>
-        {
-
-            try
+        socket.on(
+            "send_message",
+            async (data) =>
             {
 
-                const {
-                    senderId,
-                    receiverId,
-                    message
-                } = data;
-
-
-
-                /*
-                ========================================
-                SAVE MESSAGE IN DATABASE
-                ========================================
-                */
-                const newMessage = await Message.create({
-
-                    senderId,
-                    receiverId,
-                    message
-
-                });
-
-
-
-                /*
-                ========================================
-                FIND RECEIVER SOCKET ID
-                ========================================
-                */
-                const receiverSocketId =
-                    onlineUsers[receiverId];
-
-
-
-                /*
-                ========================================
-                SEND MESSAGE TO RECEIVER
-                ========================================
-                */
-                if (receiverSocketId)
+                try
                 {
 
-                    io.to(receiverSocketId).emit(
+                    /*
+                    ========================================
+                    NEVER TRUST FRONTEND senderId
+                    ========================================
+                    */
+                    const senderId =
+                        socket.user.id;
+
+
+
+                    /*
+                    ========================================
+                    GET DATA
+                    ========================================
+                    */
+                    const {
+                        receiverId,
+                        message
+                    } = data;
+
+
+
+                    /*
+                    ========================================
+                    VALIDATION
+                    ========================================
+                    */
+                    if (
+                        !receiverId ||
+                        !message
+                    )
+                    {
+
+                        return socket.emit(
+                            "message_error",
+                            {
+                                message:
+                                    "Invalid data"
+                            }
+                        );
+
+                    }
+
+
+
+                    /*
+                    ========================================
+                    SEND MESSAGE SERVICE
+                    ========================================
+                    */
+                    const messageData =
+                        await sendMessageService({
+
+                            senderId,
+                            receiverId,
+                            message
+
+                        });
+
+                    /*
+                    ========================================
+                    SEND MESSAGE TO RECEIVER ROOM
+                    ========================================
+                    */
+                    io.to(receiverId).emit(
                         "receive_message",
-                        newMessage
+                        messageData
+                    );
+
+
+
+                    /*
+                    ========================================
+                    SEND CONFIRMATION TO SENDER
+                    ========================================
+                    */
+                    socket.emit(
+                        "message_sent",
+                        messageData
                     );
 
                 }
 
+                catch (error)
+                {
+
+                    console.log(
+                        "Message Error Full:",
+                        error
+                    );
+
+                    console.log(
+                        "Message Error Message:",
+                        error.message
+                    );
 
 
-                /*
-                ========================================
-                SEND MESSAGE BACK TO SENDER
-                ========================================
-                Optional:
-                Helps sender instantly see saved message
-                ========================================
-                */
-                socket.emit(
-                    "message_sent",
-                    newMessage
-                );
+
+                    socket.emit(
+                        "message_error",
+                        {
+                            message:
+                                "Failed to send message"
+                        }
+                    );
+
+                }
 
             }
-
-            catch (error)
-            {
-
-                console.log(
-                    "Message Error:",
-                    error.message
-                );
-
-            }
-
-        });
-
+        );
 
 
 
@@ -185,61 +261,36 @@ const socketHandler = (io) =>
         ========================================
         DISCONNECT EVENT
         ========================================
-        Runs when:
-        - browser closes
-        - internet disconnects
-        - tab refreshes
-
-        Removes user from online users map
-        ========================================
         */
         socket.on("disconnect", () =>
         {
 
             console.log(
-                "User Disconnected:",
+                `User Disconnected: ${userId}`
+            );
+
+
+
+            /*
+            ========================================
+            REMOVE SOCKET
+            ========================================
+            */
+            removeUserSocket(
+                userId,
                 socket.id
             );
 
 
-            /*
-            ========================================
-            FIND USER BY SOCKET ID
-            ========================================
-            */
-            for (const userId in onlineUsers)
-            {
-
-                if (
-                    onlineUsers[userId] === socket.id
-                )
-                {
-
-                    // REMOVE USER
-                    delete onlineUsers[userId];
-
-                    break;
-
-                }
-
-            }
-
-
-            console.log(
-                "Online Users:",
-                onlineUsers
-            );
-
-
 
             /*
             ========================================
-            UPDATE ONLINE USERS FOR ALL CLIENTS
+            UPDATE ONLINE USERS
             ========================================
             */
             io.emit(
                 "online_users",
-                onlineUsers
+                getOnlineUsers()
             );
 
         });
