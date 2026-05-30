@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import {
+import
+{
   Send,
   Smile,
   Paperclip,
@@ -11,15 +12,18 @@ import EmojiPicker from "emoji-picker-react";
 
 import Button from "@/components/ui/Button";
 
-import {
+import
+{
   emitTypingStart,
   emitTypingStop,
 } from "@/socket/socket";
 
-function formatFileSize(size = 0) {
+function formatFileSize(size = 0)
+{
   if (!size) return "";
 
-  if (size < 1024 * 1024) {
+  if (size < 1024 * 1024)
+  {
     return `${Math.round(size / 1024)} KB`;
   }
 
@@ -31,7 +35,8 @@ export default function MessageInput({
   onSend,
   onFileSend,
   disabled,
-}) {
+})
+{
   const [text, setText] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
 
@@ -43,8 +48,10 @@ export default function MessageInput({
   const timerRef = useRef(null);
   const taRef = useRef(null);
   const fileRef = useRef(null);
+  const emojiRef = useRef(null);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     setText("");
     setShowEmoji(false);
     setSelectedFile(null);
@@ -52,10 +59,12 @@ export default function MessageInput({
     setCaption("");
     typingRef.current = false;
 
-    return () => {
+    return () =>
+    {
       if (timerRef.current) clearTimeout(timerRef.current);
 
-      if (previewUrl) {
+      if (previewUrl)
+      {
         URL.revokeObjectURL(previewUrl);
       }
 
@@ -63,36 +72,84 @@ export default function MessageInput({
     };
   }, [conversationId]);
 
-  const handleChange = (v) => {
+  useEffect(() =>
+  {
+    const handleClickOutside = (e) =>
+    {
+      if (
+        emojiRef.current &&
+        !emojiRef.current.contains(e.target)
+      )
+      {
+        setShowEmoji(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    document.addEventListener(
+      "touchstart",
+      handleClickOutside
+    );
+
+    return () =>
+    {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+
+      document.removeEventListener(
+        "touchstart",
+        handleClickOutside
+      );
+    };
+  }, []);
+
+  const handleChange = (v) =>
+  {
     setText(v);
 
     if (!conversationId) return;
 
-    if (!typingRef.current) {
+    if (!typingRef.current)
+    {
       typingRef.current = true;
       emitTypingStart({ conversationId });
     }
 
     clearTimeout(timerRef.current);
 
-    timerRef.current = setTimeout(() => {
+    timerRef.current = setTimeout(() =>
+    {
       typingRef.current = false;
       emitTypingStop({ conversationId });
     }, 1500);
   };
 
-  const addEmoji = (emojiData) => {
+  const addEmoji = (emojiData) =>
+  {
     const emoji = emojiData?.emoji || "";
 
     setText((prev) => prev + emoji);
-    taRef.current?.focus();
 
-    if (conversationId) {
+    // Mobile me keyboard open na ho, isliye focus nahi kar rahe
+    if (!/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
+    {
+      taRef.current?.focus();
+    }
+
+    if (conversationId)
+    {
       emitTypingStart({ conversationId });
     }
   };
 
-  const submit = (e) => {
+  const submit = (e) =>
+  {
     e?.preventDefault();
 
     const value = text.trim();
@@ -110,7 +167,8 @@ export default function MessageInput({
     taRef.current?.focus();
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e) =>
+  {
     const file = e.target.files?.[0];
 
     if (!file || disabled) return;
@@ -118,18 +176,22 @@ export default function MessageInput({
     setSelectedFile(file);
     setCaption("");
 
-    if (file.type.startsWith("image/")) {
+    if (file.type.startsWith("image/"))
+    {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
-    } else {
+    } else
+    {
       setPreviewUrl("");
     }
 
     e.target.value = "";
   };
 
-  const closePreview = () => {
-    if (previewUrl) {
+  const closePreview = () =>
+  {
+    if (previewUrl)
+    {
       URL.revokeObjectURL(previewUrl);
     }
 
@@ -138,7 +200,8 @@ export default function MessageInput({
     setCaption("");
   };
 
-  const sendSelectedFile = () => {
+  const sendSelectedFile = () =>
+  {
     if (!selectedFile || disabled) return;
 
     onFileSend?.(selectedFile, caption.trim());
@@ -146,8 +209,10 @@ export default function MessageInput({
     closePreview();
   };
 
-  const onKey = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+  const onKey = (e) =>
+  {
+    if (e.key === "Enter" && !e.shiftKey)
+    {
       e.preventDefault();
       submit();
     }
@@ -231,23 +296,27 @@ export default function MessageInput({
         onSubmit={submit}
         className="relative flex shrink-0 items-end gap-2 border-t border-(--color-border) bg-(--color-card) p-2.5 pb-[max(10px,env(safe-area-inset-bottom))] md:p-3"
       >
-        {showEmoji && (
-          <div className="absolute bottom-16 left-3 z-50">
-            <EmojiPicker
-              theme="dark"
-              onEmojiClick={addEmoji}
-            />
-          </div>
-        )}
+        <div ref={emojiRef} className="relative">
+          {showEmoji && (
+            <div className="absolute bottom-12 left-0 z-50">
+              <EmojiPicker
+                theme="dark"
+                onEmojiClick={addEmoji}
+              />
+            </div>
+          )}
 
-        <button
-          type="button"
-          onClick={() => setShowEmoji((prev) => !prev)}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
-          tabIndex={-1}
-        >
-          <Smile size={18} />
-        </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onTouchStart={(e) => e.preventDefault()}
+            onClick={() => setShowEmoji((prev) => !prev)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
+            tabIndex={-1}
+          >
+            <Smile size={18} />
+          </button>
+        </div>
 
         <button
           type="button"
