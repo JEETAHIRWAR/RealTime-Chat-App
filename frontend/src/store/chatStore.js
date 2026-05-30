@@ -103,20 +103,43 @@ export const useChatStore = create((set) => ({
   updateMessageStatus: (messageId, status) =>
     set((s) =>
     {
-      const updated = {};
+      if (!messageId) return {};
 
-      for (const convId in s.messagesByConv)
+      let changed = false;
+
+      const messagesByConv = { ...s.messagesByConv };
+
+      for (const convId in messagesByConv)
       {
-        updated[convId] = (s.messagesByConv[convId] || []).map(
+        const messages = messagesByConv[convId] || [];
+
+        const index = messages.findIndex(
           (m) =>
-            getId(m)?.toString() === messageId?.toString()
-              ? { ...m, status }
-              : m
+            getId(m)?.toString() ===
+            messageId?.toString()
         );
+
+        if (index !== -1)
+        {
+          const updatedMessages = [...messages];
+
+          updatedMessages[index] = {
+            ...updatedMessages[index],
+            status,
+          };
+
+          messagesByConv[convId] = updatedMessages;
+
+          changed = true;
+
+          break;
+        }
       }
 
+      if (!changed) return {};
+
       return {
-        messagesByConv: updated,
+        messagesByConv,
       };
     }),
 
