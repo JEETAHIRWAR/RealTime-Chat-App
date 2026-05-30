@@ -29,7 +29,8 @@ export default function GoogleLoginButton()
       <GoogleLogin
         useOneTap={false}
         width="420"
-        size="large"
+        // size="large"
+        size="medium"
         theme="outline"
         text="signin_with"
         shape="rectangular"
