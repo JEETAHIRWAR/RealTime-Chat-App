@@ -245,9 +245,9 @@ export default function ChatWindow({ conversationId })
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-bg)]">
+    <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-bg)]">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-card)] px-3 py-3 md:px-5">
+      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-card)] px-3 py-3 md:px-5">
         <button
           type="button"
           onClick={() => navigate("/chat")}
