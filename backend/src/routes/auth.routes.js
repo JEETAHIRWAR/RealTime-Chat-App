@@ -8,7 +8,8 @@ const {
     getMe,
     sendEmailOTP,
     verifyEmailOTP,
-    refreshAccessToken
+    refreshAccessToken,
+    googleLogin
 } = require("../controllers/auth.controller");
 const { protect } = require("../middleware/auth.middleware");
 
@@ -48,6 +49,16 @@ router.post(
 router.post(
     "/refresh-token",
     refreshAccessToken
+);
+
+/*
+========================================
+GOOGLE LOGIN
+========================================
+*/
+router.post(
+    "/google-login",
+    googleLogin
 );
 
 module.exports = router;

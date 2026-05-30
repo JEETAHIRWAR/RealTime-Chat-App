@@ -64,8 +64,16 @@ const userSchema = new mongoose.Schema({
     Not required for Google login users
     ========================================
     */
+    // password: {
+    //     type: String
+    // },
+
     password: {
-        type: String
+        type: String,
+        required: function ()
+        {
+            return this.authProvider === "local";
+        }
     },
 
 

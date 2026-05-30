@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/user.model");
 const {
     createOTP,
@@ -11,6 +12,10 @@ const {
     generateRefreshToken
 } = require("../utils/token");
 
+const googleClient =
+    new OAuth2Client(
+        process.env.GOOGLE_CLIENT_ID
+    );
 
 
 // REGISTER
@@ -123,10 +128,6 @@ exports.login = async (req, res) =>
         SAVE REFRESH TOKEN
         ========================================
         */
-        const hashedRefreshToken = await bcrypt.hash(
-            refreshToken,
-            10
-        );
 
         user.refreshToken = await bcrypt.hash(
             refreshToken,
@@ -509,4 +510,118 @@ exports.refreshAccessToken = async (
 
     }
 
+};
+
+
+/*
+========================================
+GOOGLE LOGIN
+========================================
+*/
+exports.googleLogin = async (req, res) =>
+{
+    try
+    {
+        const { token } = req.body;
+
+        if (!token)
+        {
+            return res.status(400).json({
+                success: false,
+                message: "Google token is required"
+            });
+        }
+
+        const ticket =
+            await googleClient.verifyIdToken({
+                idToken: token,
+                audience: process.env.GOOGLE_CLIENT_ID
+            });
+
+        const payload =
+            ticket.getPayload();
+
+        const {
+            sub,
+            email,
+            name,
+            picture
+        } = payload;
+
+        if (!email)
+        {
+            return res.status(400).json({
+                success: false,
+                message: "Google email not found"
+            });
+        }
+
+        let user =
+            await User.findOne({
+                email
+            });
+
+        if (!user)
+        {
+            user =
+                await User.create({
+                    name,
+                    email,
+                    password: "",
+                    googleId: sub,
+                    avatar: picture || "",
+                    authProvider: "google",
+                    isVerified: true
+                });
+        }
+        else
+        {
+            user.googleId =
+                user.googleId || sub;
+
+            user.avatar =
+                user.avatar || picture || "";
+
+            user.authProvider =
+                user.authProvider || "google";
+
+            user.isVerified = true;
+
+            await user.save();
+        }
+
+        const accessToken =
+            generateAccessToken(user._id);
+
+        const refreshToken =
+            generateRefreshToken(user._id);
+
+        user.refreshToken =
+            await bcrypt.hash(
+                refreshToken,
+                10
+            );
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            accessToken,
+            refreshToken,
+            user
+        });
+    }
+    catch (error)
+    {
+        console.log(
+            "GOOGLE LOGIN ERROR:",
+            error.message
+        );
+
+        res.status(401).json({
+            success: false,
+            message: "Google login failed",
+            error: error.message
+        });
+    }
 };
