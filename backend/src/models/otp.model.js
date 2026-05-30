@@ -4,30 +4,15 @@ const mongoose = require("mongoose");
 
 /*
 ========================================
-USER SCHEMA
+OTP SCHEMA
 ========================================
 Supports:
-- email authentication
-- phone authentication
-- Google OAuth
-- profile system
-- refresh tokens
+- email OTP
+- phone OTP
+- password reset OTP
 ========================================
 */
-const userSchema = new mongoose.Schema({
-
-    /*
-    ========================================
-    BASIC INFO
-    ========================================
-    */
-    name: {
-        type: String,
-        required: true,
-        trim: true
-    },
-
-
+const otpSchema = new mongoose.Schema({
 
     /*
     ========================================
@@ -36,8 +21,6 @@ const userSchema = new mongoose.Schema({
     */
     email: {
         type: String,
-        unique: true,
-        sparse: true,
         lowercase: true,
         trim: true
     },
@@ -50,21 +33,6 @@ const userSchema = new mongoose.Schema({
     ========================================
     */
     phone: {
-        type: String,
-        unique: true,
-        sparse: true
-    },
-
-
-
-    /*
-    ========================================
-    PASSWORD
-    ========================================
-    Not required for Google login users
-    ========================================
-    */
-    password: {
         type: String
     },
 
@@ -72,55 +40,41 @@ const userSchema = new mongoose.Schema({
 
     /*
     ========================================
-    GOOGLE AUTH ID
+    HASHED OTP
+    ========================================
+    Never store raw OTP
     ========================================
     */
-    googleId: {
+    otp: {
         type: String,
-        default: null
+        required: true
     },
 
 
 
     /*
     ========================================
-    USER AVATAR
+    OTP PURPOSE
     ========================================
     */
-    avatar: {
-        type: String,
-        default: ""
-    },
-
-
-
-    /*
-    ========================================
-    AUTH PROVIDER
-    ========================================
-    local
-    google
-    phone
-    ========================================
-    */
-    authProvider: {
+    purpose: {
         type: String,
         enum: [
-            "local",
-            "google",
-            "phone"
+            "email_verification",
+            "phone_verification",
+            "password_reset"
         ],
-        default: "local"
+        required: true
     },
 
 
 
     /*
     ========================================
-    ACCOUNT VERIFICATION
+    VERIFICATION STATUS
     ========================================
     */
-    isVerified: {
+    verified: {
         type: Boolean,
         default: false
     },
@@ -129,38 +83,26 @@ const userSchema = new mongoose.Schema({
 
     /*
     ========================================
-    LAST SEEN
+    OTP EXPIRY
     ========================================
     */
-    lastSeen: {
+    expiresAt: {
         type: Date,
-        default: Date.now
+        required: true
     },
 
 
 
     /*
     ========================================
-    USER BIO
+    OTP ATTEMPTS
+    ========================================
+    Prevent brute force attacks
     ========================================
     */
-    bio: {
-        type: String,
-        default: ""
-    },
-
-
-
-    /*
-    ========================================
-    REFRESH TOKEN
-    ========================================
-    Used for session management
-    ========================================
-    */
-    refreshToken: {
-        type: String,
-        default: null
+    attempts: {
+        type: Number,
+        default: 0
     }
 
 },
@@ -172,10 +114,24 @@ const userSchema = new mongoose.Schema({
 
 /*
 ========================================
+AUTO DELETE EXPIRED OTPs
+========================================
+MongoDB TTL Index
+========================================
+*/
+otpSchema.index(
+    { expiresAt: 1 },
+    { expireAfterSeconds: 0 }
+);
+
+
+
+/*
+========================================
 EXPORT MODEL
 ========================================
 */
 module.exports = mongoose.model(
-    "User",
-    userSchema
+    "OTP",
+    otpSchema
 );

@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 
@@ -11,28 +12,118 @@ Stores chat messages between users
 */
 const messageSchema = new mongoose.Schema({
 
+    /*
+    ========================================
+    CONVERSATION ID
+    ========================================
+    Used for:
+    - chat history
+    - pagination
+    - realtime rooms
+    - scalable conversations
+    ========================================
+    */
+    conversationId: {
+        type: mongoose.Schema.Types.ObjectId,
+
+        ref: "Conversation",
+
+        required: true,
+
+        index: true
+    },
+
+
+
+
+    /*
+    ========================================
+    SENDER
+    ========================================
+    */
     senderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
 
+
+
+
+    /*
+    ========================================
+    RECEIVER
+    ========================================
+    */
     receiverId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
 
+
+
+
+    /*
+    ========================================
+    ENCRYPTED MESSAGE
+    ========================================
+    */
     message: {
         type: String,
         required: true,
         trim: true
+    },
+
+
+
+
+    /*
+    ========================================
+    MESSAGE STATUS
+    ========================================
+    sent
+    delivered
+    seen
+    ========================================
+    */
+    status: {
+
+        type: String,
+
+        enum: [
+            "sent",
+            "delivered",
+            "seen"
+        ],
+
+        default: "sent"
     }
 
 },
     {
         timestamps: true
     });
+
+
+
+
+/*
+========================================
+INDEXES
+========================================
+Optimized for:
+- chat history loading
+- pagination
+- realtime performance
+========================================
+*/
+messageSchema.index({
+    conversationId: 1,
+    createdAt: -1
+});
+
+
 
 
 

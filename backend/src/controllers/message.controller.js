@@ -1,15 +1,61 @@
 const Message = require("../models/message.model");
+
+const Conversation = require(
+    "../models/conversation.model"
+);
+
 const {
     decryptMessage
 } = require("../utils/encryption");
 
 
+
+
+
+
 /*
 ========================================
-GET CHAT MESSAGES
+SAFE DECRYPTION
+========================================
+Prevents crashes if:
+- invalid encrypted data
+- malformed strings
+- null values
+========================================
+*/
+const safeDecrypt = (value) =>
+{
+
+    try
+    {
+
+        return value
+            ? decryptMessage(value)
+            : "";
+
+    }
+
+    catch (error)
+    {
+
+        return "";
+
+    }
+
+};
+
+
+
+
+
+
+
+/*
+========================================
+GET CONVERSATION MESSAGES
 ========================================
 Returns paginated chat history
-between two users
+using conversationId
 ========================================
 */
 exports.getMessages = async (req, res) =>
@@ -23,15 +69,83 @@ exports.getMessages = async (req, res) =>
         CURRENT LOGGED-IN USER
         ========================================
         */
-        const senderId = req.user.id;
+        const userId =
+            req.user.id;
+
+
+
 
 
         /*
         ========================================
-        CHAT PARTNER ID
+        CONVERSATION ID
         ========================================
         */
-        const { receiverId } = req.params;
+        const {
+            conversationId
+        } = req.params;
+
+
+
+
+
+        /*
+        ========================================
+        VALIDATION
+        ========================================
+        */
+        if (!conversationId)
+        {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Conversation ID required"
+
+            });
+
+        }
+
+
+
+
+
+
+        /*
+        ========================================
+        VERIFY USER BELONGS TO CONVERSATION
+        ========================================
+        */
+        const conversation =
+            await Conversation.findOne({
+
+                _id: conversationId,
+
+                participants: userId
+
+            });
+
+
+
+
+        if (!conversation)
+        {
+
+            return res.status(403).json({
+
+                success: false,
+
+                message:
+                    "Unauthorized conversation access"
+
+            });
+
+        }
+
+
+
 
 
 
@@ -40,42 +154,48 @@ exports.getMessages = async (req, res) =>
         PAGINATION
         ========================================
         */
-        const page = parseInt(req.query.page) || 1;
+        const page =
+            parseInt(req.query.page) || 1;
 
-        const limit = parseInt(req.query.limit) || 20;
+        const limit =
+            parseInt(req.query.limit) || 20;
 
-        const skip = (page - 1) * limit;
+        const skip =
+            (page - 1) * limit;
+
+
+
 
 
 
         /*
-========================================
-FIND CONVERSATION
-========================================
-*/
-        const messages = await Message.find({
+        ========================================
+        GET MESSAGES
+        ========================================
+        Optimized for:
+        - pagination
+        - infinite scroll
+        - realtime systems
+        ========================================
+        */
+        const messages =
+            await Message.find({
 
-            $or: [
+                conversationId
 
-                {
-                    senderId,
-                    receiverId
-                },
+            })
 
-                {
-                    senderId: receiverId,
-                    receiverId: senderId
-                }
+                .sort({
+                    createdAt: -1
+                })
 
-            ]
+                .skip(skip)
 
-        })
+                .limit(limit)
 
-            .sort({ createdAt: -1 })
+                .lean();
 
-            .skip(skip)
 
-            .limit(limit);
 
 
 
@@ -89,17 +209,21 @@ FIND CONVERSATION
             messages.map((msg) =>
             {
 
-                const messageObj =
-                    msg.toObject();
+                return {
 
-                messageObj.message =
-                    decryptMessage(
-                        messageObj.message
-                    );
+                    ...msg,
 
-                return messageObj;
+                    message:
+                        safeDecrypt(
+                            msg.message
+                        )
+
+                };
 
             });
+
+
+
 
 
 
@@ -111,21 +235,11 @@ FIND CONVERSATION
         const totalMessages =
             await Message.countDocuments({
 
-                $or: [
-
-                    {
-                        senderId,
-                        receiverId
-                    },
-
-                    {
-                        senderId: receiverId,
-                        receiverId: senderId
-                    }
-
-                ]
+                conversationId
 
             });
+
+
 
 
 
@@ -147,7 +261,12 @@ FIND CONVERSATION
                 totalMessages / limit
             ),
 
-            messages: decryptedMessages.reverse()
+            hasMore:
+                skip + messages.length <
+                totalMessages,
+
+            messages:
+                decryptedMessages.reverse()
 
         });
 
@@ -156,13 +275,329 @@ FIND CONVERSATION
     catch (error)
     {
 
+        console.log(
+            "GET MESSAGES ERROR:",
+            error.message
+        );
+
         res.status(500).json({
 
             success: false,
-            message: error.message
+
+            message:
+                "Internal Server Error"
 
         });
 
     }
 
 };
+
+
+
+
+
+
+
+
+/*
+========================================
+GET USER CONVERSATIONS
+========================================
+Sidebar conversation list
+========================================
+*/
+exports.getConversations =
+    async (req, res) =>
+    {
+
+        try
+        {
+
+            /*
+            ========================================
+            CURRENT USER
+            ========================================
+            */
+            const userId =
+                req.user.id;
+
+
+
+
+
+            /*
+            ========================================
+            FIND CONVERSATIONS
+            ========================================
+            */
+            const conversations =
+                await Conversation.find({
+
+                    participants: userId
+
+                })
+
+                    .populate(
+                        "participants",
+                        "name email avatar"
+                    )
+
+                    .populate({
+
+                        path: "lastMessage",
+
+                        select:
+                            "message senderId receiverId createdAt status"
+                    })
+
+                    .sort({
+                        updatedAt: -1
+                    })
+
+                    .lean();
+
+
+
+
+
+
+            /*
+            ========================================
+            DECRYPT LAST MESSAGE
+            ========================================
+            */
+            const formattedConversations =
+                conversations.map((conv) =>
+                {
+
+                    if (conv.lastMessage)
+                    {
+
+                        conv.lastMessage.message =
+                            safeDecrypt(
+                                conv.lastMessage.message
+                            );
+
+                    }
+
+                    return conv;
+
+                });
+
+
+
+
+
+
+            /*
+            ========================================
+            RESPONSE
+            ========================================
+            */
+            res.status(200).json({
+
+                success: true,
+
+                conversations:
+                    formattedConversations
+
+            });
+
+        }
+
+        catch (error)
+        {
+
+            console.log(
+                "GET CONVERSATIONS ERROR:",
+                error.message
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Internal Server Error"
+
+            });
+
+        }
+
+    };
+
+
+
+
+
+
+
+
+/*
+========================================
+START CONVERSATION
+========================================
+Creates new conversation
+if not exists
+========================================
+*/
+exports.startConversation =
+    async (req, res) =>
+    {
+
+        try
+        {
+
+            /*
+            ========================================
+            CURRENT USER
+            ========================================
+            */
+            const currentUserId =
+                req.user.id;
+
+
+
+
+
+            /*
+            ========================================
+            TARGET USER
+            ========================================
+            */
+            const {
+                userId
+            } = req.body;
+
+
+
+
+
+            /*
+            ========================================
+            VALIDATION
+            ========================================
+            */
+            if (!userId)
+            {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "User ID required"
+
+                });
+
+            }
+
+
+
+
+
+
+            /*
+            ========================================
+            CHECK EXISTING CONVERSATION
+            ========================================
+            */
+            let conversation =
+                await Conversation.findOne({
+
+                    participants: {
+
+                        $all: [
+                            currentUserId,
+                            userId
+                        ]
+
+                    }
+
+                })
+
+                    .populate(
+                        "participants",
+                        "name email avatar"
+                    );
+
+
+
+
+
+
+            /*
+            ========================================
+            CREATE NEW CONVERSATION
+            ========================================
+            */
+            if (!conversation)
+            {
+
+                conversation =
+                    await Conversation.create({
+
+                        participants: [
+                            currentUserId,
+                            userId
+                        ]
+
+                    });
+
+
+
+
+
+                conversation =
+                    await Conversation.findById(
+                        conversation._id
+                    )
+
+                        .populate(
+                            "participants",
+                            "name email avatar"
+                        );
+
+            }
+
+
+
+
+
+
+            /*
+            ========================================
+            RESPONSE
+            ========================================
+            */
+            res.status(200).json({
+
+                success: true,
+
+                conversation
+
+            });
+
+        }
+
+        catch (error)
+        {
+
+            console.log(
+                "START CONVERSATION ERROR:",
+                error.message
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Internal Server Error"
+
+            });
+
+        }
+
+    };

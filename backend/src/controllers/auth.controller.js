@@ -1,13 +1,24 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
 const User = require("../models/user.model");
+const {
+    createOTP,
+    verifyOTP
+} = require("../services/otp.service");
+
+const {
+    generateAccessToken,
+    generateRefreshToken
+} = require("../utils/token");
+
 
 
 // REGISTER
-exports.register = async (req, res) => {
+exports.register = async (req, res) =>
+{
 
-    try {
+    try
+    {
 
         // GET DATA
         const { name, email, password } = req.body;
@@ -15,7 +26,8 @@ exports.register = async (req, res) => {
         // CHECK EXISTING USER
         const existingUser = await User.findOne({ email });
 
-        if (existingUser) {
+        if (existingUser)
+        {
 
             return res.status(400).json({
                 success: false,
@@ -41,7 +53,8 @@ exports.register = async (req, res) => {
             user
         });
 
-    } catch (error) {
+    } catch (error)
+    {
 
         res.status(500).json({
             success: false,
@@ -55,9 +68,11 @@ exports.register = async (req, res) => {
 
 
 // LOGIN
-exports.login = async (req, res) => {
+exports.login = async (req, res) =>
+{
 
-    try {
+    try
+    {
 
         // GET DATA
         const { email, password } = req.body;
@@ -65,7 +80,8 @@ exports.login = async (req, res) => {
         // CHECK USER
         const user = await User.findOne({ email });
 
-        if (!user) {
+        if (!user)
+        {
 
             return res.status(400).json({
                 success: false,
@@ -80,7 +96,8 @@ exports.login = async (req, res) => {
             user.password
         );
 
-        if (!isMatch) {
+        if (!isMatch)
+        {
 
             return res.status(400).json({
                 success: false,
@@ -89,30 +106,399 @@ exports.login = async (req, res) => {
 
         }
 
-        // GENERATE JWT TOKEN
-        const token = jwt.sign(
-            {
-                id: user._id
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "7d"
-            }
-        );
+        /*
+        ========================================
+        GENERATE TOKENS
+        ========================================
+        */
+        const accessToken =
+            generateAccessToken(user._id);
+
+        const refreshToken =
+            generateRefreshToken(user._id);
+
+
+
+
+        /*
+        ========================================
+        SAVE REFRESH TOKEN
+        ========================================
+        */
+        user.refreshToken = refreshToken;
+
+        await user.save();
 
         // RESPONSE
         res.status(200).json({
+
             success: true,
-            message: "Login successful",
-            token,
+
+            accessToken,
+
+            refreshToken,
+
             user
+
         });
 
-    } catch (error) {
+    } catch (error)
+    {
 
         res.status(500).json({
             success: false,
             message: error.message
+        });
+
+    }
+
+};
+
+
+/*
+========================================
+SEND EMAIL OTP
+========================================
+*/
+exports.sendEmailOTP = async (req, res) =>
+{
+
+    try
+    {
+
+        const { email } = req.body;
+
+
+
+        /*
+        ========================================
+        VALIDATE EMAIL
+        ========================================
+        */
+        if (!email)
+        {
+
+            return res.status(400).json({
+
+                success: false,
+                message: "Email is required"
+
+            });
+
+        }
+
+
+
+
+        /*
+        ========================================
+        GENERATE OTP
+        ========================================
+        */
+        const otp = await createOTP({
+
+            email,
+            purpose: "email_verification"
+
+        });
+
+
+
+
+        /*
+        ========================================
+        RESPONSE
+        ========================================
+        */
+        res.status(200).json({
+
+            success: true,
+            message: "OTP sent successfully",
+
+            /*
+            ====================================
+            TEMPORARY FOR TESTING
+            REMOVE IN PRODUCTION
+            ====================================
+            */
+            otp
+
+        });
+
+    }
+
+    catch (error)
+    {
+
+        res.status(500).json({
+
+            success: false,
+            message: error.message
+
+        });
+
+    }
+
+};
+
+
+/*
+========================================
+VERIFY EMAIL OTP
+========================================
+*/
+exports.verifyEmailOTP = async (req, res) =>
+{
+
+    try
+    {
+
+        const {
+            email,
+            otp
+        } = req.body;
+
+
+
+        /*
+        ========================================
+        VALIDATE INPUT
+        ========================================
+        */
+        if (!email || !otp)
+        {
+
+            return res.status(400).json({
+
+                success: false,
+                message: "Email and OTP are required"
+
+            });
+
+        }
+
+
+
+
+        /*
+        ========================================
+        VERIFY OTP
+        ========================================
+        */
+        const result = await verifyOTP({
+
+            email,
+            otp,
+            purpose: "email_verification"
+
+        });
+
+
+
+
+        /*
+        ========================================
+        OTP FAILED
+        ========================================
+        */
+        if (!result.success)
+        {
+
+            return res.status(400).json(result);
+
+        }
+
+
+
+
+        /*
+        ========================================
+        UPDATE USER VERIFICATION
+        ========================================
+        */
+        await User.findOneAndUpdate(
+
+            { email },
+
+            {
+                isVerified: true
+            }
+
+        );
+
+
+
+
+        /*
+        ========================================
+        RESPONSE
+        ========================================
+        */
+        res.status(200).json({
+
+            success: true,
+            message: "Email verified successfully"
+
+        });
+
+    }
+
+    catch (error)
+    {
+
+        res.status(500).json({
+
+            success: false,
+            message: error.message
+
+        });
+
+    }
+
+};
+
+
+/*
+========================================
+REFRESH ACCESS TOKEN
+========================================
+*/
+exports.refreshAccessToken = async (
+    req,
+    res
+) =>
+{
+
+    try
+    {
+
+        const { refreshToken } = req.body;
+
+
+
+        /*
+        ========================================
+        VALIDATE TOKEN
+        ========================================
+        */
+        if (!refreshToken)
+        {
+
+            return res.status(401).json({
+
+                success: false,
+                message: "Refresh token required"
+
+            });
+
+        }
+
+
+
+
+        /*
+        ========================================
+        VERIFY REFRESH TOKEN
+        ========================================
+        */
+        const decoded = jwt.verify(
+
+            refreshToken,
+
+            process.env.JWT_REFRESH_SECRET
+
+        );
+
+
+
+
+        /*
+        ========================================
+        FIND USER
+        ========================================
+        */
+        const user = await User.findById(
+            decoded.id
+        );
+
+
+
+        /*
+        ========================================
+        INVALID USER
+        ========================================
+        */
+        if (!user)
+        {
+
+            return res.status(401).json({
+
+                success: false,
+                message: "Invalid user"
+
+            });
+
+        }
+
+
+
+
+        /*
+        ========================================
+        TOKEN MISMATCH
+        ========================================
+        */
+        if (
+            user.refreshToken !== refreshToken
+        )
+        {
+
+            return res.status(401).json({
+
+                success: false,
+                message: "Invalid refresh token"
+
+            });
+
+        }
+
+
+
+
+        /*
+        ========================================
+        GENERATE NEW ACCESS TOKEN
+        ========================================
+        */
+        const newAccessToken =
+            generateAccessToken(user._id);
+
+
+
+
+        /*
+        ========================================
+        RESPONSE
+        ========================================
+        */
+        res.status(200).json({
+
+            success: true,
+
+            accessToken: newAccessToken
+
+        });
+
+    }
+
+    catch (error)
+    {
+
+        res.status(401).json({
+
+            success: false,
+            message: "Invalid or expired token"
+
         });
 
     }

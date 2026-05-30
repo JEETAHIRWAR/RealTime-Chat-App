@@ -1,29 +1,18 @@
-/*
-========================================
-SOCKET AUTH MIDDLEWARE
-========================================
-*/
-const socketAuth = require(
-    "./middleware/socketAuth"
-);
 
 /*
 ========================================
-Messages Encrypted
+IMPORTS
 ========================================
 */
+const Message = require("../models/message.model");
+
+
+
 const {
     encryptMessage,
     decryptMessage
 } = require("../utils/encryption");
 
-
-
-/*
-========================================
-ONLINE USERS MANAGER
-========================================
-*/
 const {
 
     addUserSocket,
@@ -34,20 +23,57 @@ const {
     "./managers/onlineUsers.manager"
 );
 
+const {
+
+    findOrCreateConversation,
+
+    updateLastMessage,
+
+    getUserConversations,
+
+    resetUnreadCount
+
+} = require(
+    "../repositories/conversation.repository"
+);
+
+
+
 
 
 /*
 ========================================
-MESSAGE MODEL
+SAFE DECRYPTION
+========================================
+Prevents crashes if:
+- invalid encrypted data
+- null values
+- malformed strings
 ========================================
 */
-const {
+const safeDecrypt = (value) =>
+{
 
-    sendMessageService
+    try
+    {
 
-} = require(
-    "../services/message.service"
-);
+        return value
+            ? decryptMessage(value)
+            : "";
+
+    }
+
+    catch (error)
+    {
+
+        return "";
+
+    }
+
+};
+
+
+
 
 
 
@@ -55,18 +81,18 @@ const {
 ========================================
 SOCKET HANDLER
 ========================================
+Handles:
+- authenticated connections
+- realtime messaging
+- typing indicators
+- online presence
+- disconnect cleanup
+- conversation rooms
+- multi-tab sync
+========================================
 */
 const socketHandler = (io) =>
 {
-
-    /*
-    ========================================
-    SOCKET AUTH MIDDLEWARE
-    ========================================
-    */
-    io.use(socketAuth);
-
-
 
     /*
     ========================================
@@ -77,152 +103,65 @@ const socketHandler = (io) =>
     {
 
         /*
-        ========================================
+        ====================================
         AUTHENTICATED USER
-        ========================================
+        ====================================
         */
-        const userId = socket.user.id;
+        const userId =
+            socket.user.id;
 
 
 
         console.log(
-            `User Connected: ${userId}`
+            "User Connected:",
+            userId
         );
 
 
 
+
+
         /*
-        ========================================
+        ====================================
         JOIN PERSONAL ROOM
-        ========================================
-
-        WHY?
-        - multi-device support
-        - scalable messaging
-        - redis-ready architecture
-
-        ========================================
+        ====================================
+        Supports:
+        - multi-device sync
+        - multiple tabs
+        - notifications
+        ====================================
         */
-        socket.join(userId);
-
-
-
-        /*
-        ========================================
-        STORE USER SOCKET
-        ========================================
-        */
-        addUserSocket(
-            userId,
-            socket.id
+        socket.join(
+            userId.toString()
         );
 
 
 
-        /*
-        ========================================
-        SEND ONLINE USERS
-        ========================================
-        */
-        io.emit(
-            "online_users",
-            getOnlineUsers()
-        );
-
 
 
         /*
-        ========================================
-        SEND MESSAGE EVENT
-        ========================================
+        ====================================
+        JOIN CONVERSATION ROOM
+        ====================================
         */
         socket.on(
-            "send_message",
-            async (data) =>
+            "join_conversation",
+
+            (conversationId) =>
             {
 
                 try
                 {
 
-                    /*
-                    ========================================
-                    NEVER TRUST FRONTEND senderId
-                    ========================================
-                    */
-                    const senderId =
-                        socket.user.id;
-
-
-
-                    /*
-                    ========================================
-                    GET DATA
-                    ========================================
-                    */
-                    const {
-                        receiverId,
-                        message
-                    } = data;
-
-
-
-                    /*
-                    ========================================
-                    VALIDATION
-                    ========================================
-                    */
-                    if (
-                        !receiverId ||
-                        !message
-                    )
+                    if (!conversationId)
                     {
-
-                        return socket.emit(
-                            "message_error",
-                            {
-                                message:
-                                    "Invalid data"
-                            }
-                        );
-
+                        return;
                     }
 
 
 
-                    /*
-                    ========================================
-                    SEND MESSAGE SERVICE
-                    ========================================
-                    */
-                    const messageData =
-                        await sendMessageService({
-
-                            senderId,
-                            receiverId,
-                            message
-
-                        });
-
-                    /*
-                    ========================================
-                    SEND MESSAGE TO RECEIVER ROOM
-                    ========================================
-                    */
-                    io.to(receiverId).emit(
-                        "receive_message",
-                        messageData
-                    );
-
-
-
-                    /*
-                    ========================================
-                    SEND CONFIRMATION TO SENDER
-                    ========================================
-                    */
-                    socket.emit(
-                        "message_sent",
-                        messageData
+                    socket.join(
+                        conversationId.toString()
                     );
 
                 }
@@ -231,73 +170,586 @@ const socketHandler = (io) =>
                 {
 
                     console.log(
-                        "Message Error Full:",
-                        error
-                    );
-
-                    console.log(
-                        "Message Error Message:",
+                        "JOIN CONVERSATION ERROR:",
                         error.message
-                    );
-
-
-
-                    socket.emit(
-                        "message_error",
-                        {
-                            message:
-                                "Failed to send message"
-                        }
                     );
 
                 }
 
             }
+
         );
 
 
 
+
+
         /*
-        ========================================
-        DISCONNECT EVENT
-        ========================================
+        ====================================
+        STORE USER SOCKET
+        ====================================
         */
-        socket.on("disconnect", () =>
-        {
-
-            console.log(
-                `User Disconnected: ${userId}`
-            );
+        addUserSocket(
+            userId.toString(),
+            socket.id
+        );
 
 
 
-            /*
-            ========================================
-            REMOVE SOCKET
-            ========================================
-            */
-            removeUserSocket(
-                userId,
-                socket.id
-            );
+
+
+        /*
+        ====================================
+        BROADCAST ONLINE USERS
+        ====================================
+        */
+        io.emit(
+            "online_users",
+            getOnlineUsers()
+        );
 
 
 
-            /*
-            ========================================
-            UPDATE ONLINE USERS
-            ========================================
-            */
-            io.emit(
-                "online_users",
-                getOnlineUsers()
-            );
 
-        });
+
+
+        /*
+        ====================================
+        SEND MESSAGE
+        ====================================
+        */
+        socket.on(
+            "send_message",
+
+            async (payload = {}) =>
+            {
+
+                try
+                {
+
+                    /*
+                    ========================
+                    PAYLOAD VALIDATION
+                    ========================
+                    */
+                    const {
+                        receiverId,
+                        conversationId,
+                        message
+                    } = payload;
+
+
+
+                    if (
+                        !receiverId ||
+                        !conversationId ||
+                        !message?.trim()
+                    )
+                    {
+
+                        return;
+
+                    }
+
+
+
+
+
+                    /*
+                    ========================
+                    ENCRYPT MESSAGE
+                    ========================
+                    */
+                    const encryptedMessage =
+                        encryptMessage(
+                            message
+                        );
+
+                    /*
+                    ========================================
+                    FIND OR CREATE CONVERSATION
+                    ========================================
+                    */
+                    const conversation = await findOrCreateConversation(
+                        userId,
+                        receiverId
+                    );
+
+                    const finalConversationId = conversationId || conversation._id;
+
+
+
+                    /*
+                    ========================
+                    SAVE MESSAGE
+                    ========================
+                    */
+                    const messageData =
+                        await Message.create({
+
+                            conversationId: finalConversationId,
+
+                            senderId: userId,
+
+                            receiverId,
+
+                            message:
+                                encryptedMessage
+
+                        });
+
+
+                    const receiverIsOnline =
+                        getOnlineUsers().includes(receiverId.toString());
+
+                    if (receiverIsOnline)
+                    {
+                        messageData.status = "delivered";
+                        await messageData.save();
+                    }
+
+
+
+
+                    /*
+                    ========================
+                    FORMAT RESPONSE
+                    ========================
+                    */
+                    const formattedMessage = {
+
+                        _id:
+                            messageData._id,
+
+                        conversationId: finalConversationId,
+
+                        senderId:
+                            messageData.senderId,
+
+                        receiverId:
+                            messageData.receiverId,
+
+                        message:
+                            safeDecrypt(
+                                messageData.message
+                            ),
+
+                        status:
+                            messageData.status,
+
+                        createdAt:
+                            messageData.createdAt
+
+                    };
+
+
+                    /*
+                    ========================================
+                    UPDATE CONVERSATION
+                    ========================================
+                    */
+                    await updateLastMessage(
+
+                        finalConversationId,
+
+                        userId,
+
+                        message,
+
+                        receiverId
+
+                    );
+
+
+                    /*
+                    ========================================
+                    GET UPDATED CONVERSATIONS
+                    ========================================
+                    */
+                    const senderConversations =
+
+                        await getUserConversations(
+                            userId
+                        );
+
+
+
+                    const receiverConversations =
+
+                        await getUserConversations(
+                            receiverId
+                        );
+
+
+
+
+                    /*
+                    ========================================
+                    REALTIME SIDEBAR UPDATE
+                    ========================================
+                    */
+                    io.to(userId.toString()).emit(
+
+                        "conversations_updated",
+
+                        senderConversations
+
+                    );
+
+
+
+                    io.to(receiverId.toString()).emit(
+
+                        "conversations_updated",
+
+                        receiverConversations
+
+                    );
+
+
+
+                    /*
+                    ========================
+                    SEND TO RECEIVER
+                    ========================
+                    */
+                    io.to(
+                        receiverId.toString()
+                    ).emit(
+
+                        "receive_message",
+
+                        formattedMessage
+
+                    );
+
+
+
+
+
+                    /*
+                    ========================
+                    SEND TO CONVERSATION ROOM
+                    =================================
+                    Sync active conversation tabs
+                    =================================
+                    */
+                    io.to(
+                        conversationId.toString()
+                    ).emit(
+
+                        "conversation_message",
+
+                        formattedMessage
+
+                    );
+
+
+
+
+
+                    /*
+                    ========================
+                    MULTI-DEVICE SYNC
+                    SEND TO ALL
+                    SENDER DEVICES
+                    ========================
+                    */
+                    io.to(
+                        userId.toString()
+                    ).emit(
+
+                        "message_sent",
+
+                        formattedMessage
+
+                    );
+
+                }
+
+                catch (error)
+                {
+
+                    console.log(
+                        "SEND MESSAGE ERROR:",
+                        error.message
+                    );
+
+                }
+
+            }
+
+        );
+
+
+
+
+
+
+
+
+        /*
+        ====================================
+        MESSAGE SEEN
+        ====================================
+        */
+        socket.on(
+            "message_seen",
+
+            async (payload = {}) =>
+            {
+
+                try
+                {
+
+                    const {
+                        messageId,
+                        senderId,
+                        conversationId
+                    } = payload;
+
+
+
+                    if (
+                        !messageId ||
+                        !senderId || !conversationId
+                    )
+                    {
+                        return;
+                    }
+
+
+
+
+                    await Message.findOneAndUpdate(
+                        {
+                            _id: messageId,
+                            conversationId,
+                            receiverId: userId
+                        },
+                        {
+                            status: "seen"
+                        }
+                    );
+
+
+
+
+
+                    io.to(
+                        senderId.toString()
+                    ).emit(
+
+                        "message_seen",
+
+                        {
+                            messageId
+                        }
+
+                    );
+
+                }
+
+                catch (error)
+                {
+
+                    console.log(
+                        "MESSAGE SEEN ERROR:",
+                        error.message
+                    );
+
+                }
+
+            }
+
+        );
+
+
+        /*
+        ====================================
+        TYPING START
+        ====================================
+        */
+        socket.on(
+            "typing_start",
+
+            (payload = {}) =>
+            {
+                try
+                {
+                    const { conversationId } = payload;
+
+                    if (!conversationId)
+                    {
+                        return;
+                    }
+
+                    socket.to(
+                        conversationId.toString()
+                    ).emit(
+                        "typing_start",
+                        {
+                            senderId: userId,
+                            conversationId
+                        }
+                    );
+                }
+                catch (error)
+                {
+                    console.log(
+                        "TYPING START ERROR:",
+                        error.message
+                    );
+                }
+            }
+        );
+
+
+        /*
+====================================
+TYPING STOP
+====================================
+*/
+        socket.on(
+            "typing_stop",
+
+            (payload = {}) =>
+            {
+                try
+                {
+                    const { conversationId } = payload;
+
+                    if (!conversationId)
+                    {
+                        return;
+                    }
+
+                    socket.to(
+                        conversationId.toString()
+                    ).emit(
+                        "typing_stop",
+                        {
+                            senderId: userId,
+                            conversationId
+                        }
+                    );
+                }
+                catch (error)
+                {
+                    console.log(
+                        "TYPING STOP ERROR:",
+                        error.message
+                    );
+                }
+            }
+        );
+
+
+
+
+
+        /*
+        ====================================
+        MARK CONVERSATION READ
+        ====================================
+        */
+        socket.on(
+            "mark_conversation_read",
+
+            async (payload = {}) =>
+            {
+                try
+                {
+                    const { conversationId } = payload;
+
+                    if (!conversationId)
+                    {
+                        return;
+                    }
+
+                    await resetUnreadCount(
+                        conversationId,
+                        userId
+                    );
+
+                    const updatedConversations =
+                        await getUserConversations(userId);
+
+                    io.to(userId.toString()).emit(
+                        "conversations_updated",
+                        updatedConversations
+                    );
+                }
+                catch (error)
+                {
+                    console.log(
+                        "MARK READ ERROR:",
+                        error.message
+                    );
+                }
+            }
+        );
+
+
+
+
+
+        /*
+        ====================================
+        DISCONNECT EVENT
+        ====================================
+        */
+        socket.on(
+            "disconnect",
+
+            () =>
+            {
+
+                console.log(
+                    "User Disconnected:",
+                    userId
+                );
+
+
+
+
+                /*
+                ============================
+                REMOVE SOCKET
+                ============================
+                */
+                removeUserSocket(
+                    userId.toString(),
+                    socket.id
+                );
+
+
+
+
+
+                /*
+                ============================
+                UPDATE ONLINE USERS
+                ============================
+                */
+                io.emit(
+
+                    "online_users",
+
+                    getOnlineUsers()
+
+                );
+
+            }
+
+        );
 
     });
 
 };
+
+
+
 
 
 

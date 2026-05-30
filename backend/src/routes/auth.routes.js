@@ -4,7 +4,11 @@ const router = express.Router();
 
 const {
     register,
-    login
+    login,
+    getMe,
+    sendEmailOTP,
+    verifyEmailOTP,
+    refreshAccessToken
 } = require("../controllers/auth.controller");
 const { protect } = require("../middleware/auth.middleware");
 
@@ -16,7 +20,8 @@ router.post("/register", register);
 // LOGIN
 router.post("/login", login);
 
-router.get("/me", protect, (req, res) => {
+router.get("/me", protect, (req, res) =>
+{
 
     res.status(200).json({
         success: true,
@@ -25,5 +30,24 @@ router.get("/me", protect, (req, res) => {
 
 });
 
+/*
+========================================
+EMAIL OTP ROUTES
+========================================
+*/
+router.post(
+    "/send-email-otp",
+    sendEmailOTP
+);
+
+router.post(
+    "/verify-email-otp",
+    verifyEmailOTP
+);
+
+router.post(
+    "/refresh-token",
+    refreshAccessToken
+);
 
 module.exports = router;

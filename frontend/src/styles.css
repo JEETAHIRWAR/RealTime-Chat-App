@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-bg: oklch(0.99 0.005 250);
+  --color-fg: oklch(0.18 0.02 260);
+  --color-muted: oklch(0.96 0.005 250);
+  --color-muted-fg: oklch(0.5 0.02 260);
+  --color-border: oklch(0.92 0.01 255);
+  --color-primary: oklch(0.62 0.18 260);
+  --color-primary-fg: oklch(0.99 0 0);
+  --color-accent: oklch(0.95 0.03 260);
+  --color-card: oklch(1 0 0);
+  --color-bubble-me: oklch(0.62 0.18 260);
+  --color-bubble-them: oklch(0.96 0.005 250);
+  --radius: 0.75rem;
+}
+
+.dark {
+  --color-bg: oklch(0.17 0.02 260);
+  --color-fg: oklch(0.97 0.005 250);
+  --color-muted: oklch(0.23 0.02 260);
+  --color-muted-fg: oklch(0.65 0.02 260);
+  --color-border: oklch(0.28 0.02 260);
+  --color-primary: oklch(0.7 0.18 260);
+  --color-primary-fg: oklch(0.15 0.02 260);
+  --color-accent: oklch(0.25 0.04 260);
+  --color-card: oklch(0.2 0.02 260);
+  --color-bubble-me: oklch(0.62 0.18 260);
+  --color-bubble-them: oklch(0.26 0.02 260);
+}
+
+html, body, #root { height: 100%; }
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+* { border-color: var(--color-border); }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted-fg); }

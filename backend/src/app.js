@@ -12,6 +12,14 @@ JWT_SECRET
 require("dotenv").config();
 
 
+const socketAuth = require(
+    "./socket/middleware/socketAuth"
+);
+
+const conversationRoutes =
+require("./routes/conversation.routes");
+
+const userRoutes = require("./routes/user.routes");
 
 /*
 ========================================
@@ -93,12 +101,17 @@ INITIALIZE SOCKET.IO SERVER
 const io = new Server(server, {
 
     cors: {
-        origin: "*"
+        origin: "http://localhost:8080"
     }
 
 });
 
-
+/*
+========================================
+SOCKET AUTH MIDDLEWARE
+========================================
+*/
+io.use(socketAuth);
 
 /*
 ========================================
@@ -128,7 +141,11 @@ Allows frontend to communicate
 with backend
 ========================================
 */
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+    origin: "http://localhost:8080",
+    credentials: true
+}));
 
 
 
@@ -190,8 +207,12 @@ API ROUTES
 */
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/users", userRoutes);
 
-
+app.use(
+    "/api/conversations",
+    conversationRoutes
+);
 
 /*
 ========================================

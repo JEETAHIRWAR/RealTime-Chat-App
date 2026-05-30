@@ -10,19 +10,15 @@ const {
     protect
 } = require("../middleware/auth.middleware");
 
-
-
 /*
 ========================================
-GET CHAT HISTORY
+GET CHAT HISTORY BY CONVERSATION ID
 ========================================
 */
 router.get(
-    "/:receiverId",
+    "/:conversationId",
     protect,
     getMessages
 );
-
-
 
 module.exports = router;
