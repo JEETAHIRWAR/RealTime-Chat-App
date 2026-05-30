@@ -28,9 +28,9 @@ export default function GoogleLoginButton()
     <div className="w-full flex justify-center">
       <GoogleLogin
         useOneTap={false}
-        width="420"
-        // size="large"
-        size="medium"
+        width="400"
+        size="large"
+        // size="medium"
         theme="outline"
         text="signin_with"
         shape="rectangular"
