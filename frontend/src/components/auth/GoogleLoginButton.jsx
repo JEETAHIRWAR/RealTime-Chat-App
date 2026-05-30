@@ -3,12 +3,17 @@ import { authApi } from "@/api/auth";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useMediaQuery } from "react-responsive";
 
 export default function GoogleLoginButton()
 {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const isMobile =
+    useMediaQuery({
+      maxWidth: 640,
+    });
 
   if (!clientId)
   {
@@ -28,7 +33,11 @@ export default function GoogleLoginButton()
     <div className="w-full flex justify-center">
       <GoogleLogin
         useOneTap={false}
-        width="385"
+        width={
+          isMobile
+            ? "320"
+            : "385"
+        }
         size="large"
         // size="medium"
         theme="outline"
