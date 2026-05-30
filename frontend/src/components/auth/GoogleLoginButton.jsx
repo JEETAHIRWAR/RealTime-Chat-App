@@ -28,7 +28,7 @@ export default function GoogleLoginButton()
     <div className="w-full ">
       <GoogleLogin
         useOneTap={false}
-        width="478"
+        width="420"
         size="large"
         theme="outline"
         text="signin_with"
