@@ -23,19 +23,33 @@ export default function GoogleLoginButton() {
   }
 
   return (
-    <GoogleLogin
-      onSuccess={async (cred) => {
-        try {
-          const res = await authApi.google(cred.credential);
-          setAuth({ token: res.token, user: res.user });
-          toast.success("Welcome!");
-          navigate("/chat");
-        } catch (e) {
-          toast.error(e?.response?.data?.message || "Google login failed");
-        }
-      }}
-      onError={() => toast.error("Google login failed")}
-      width="100%"
-    />
+<GoogleLogin
+  useOneTap={false}
+  onSuccess={async (cred) => {
+    try {
+      const res = await authApi.google(cred.credential);
+
+      const token = res?.accessToken || res?.token;
+
+      if (!token) {
+        toast.error("Google login failed: token missing");
+        return;
+      }
+
+      setAuth({
+        token,
+        user: res.user,
+      });
+
+      toast.success("Welcome!");
+
+      navigate("/chat", { replace: true });
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Google login failed");
+    }
+  }}
+  onError={() => toast.error("Google login failed")}
+  width="320"
+/>
   );
 }
