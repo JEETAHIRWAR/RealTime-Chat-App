@@ -1,36 +1,16 @@
-import axios from "axios";
-
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
-
-const api = axios.create({
-  baseURL: API_URL,
-});
-
-api.interceptors.request.use((config) =>
-{
-  const token = localStorage.getItem("auth_token");
-
-  if (token)
-  {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
+import { api } from "./axios";
 
 export const chatApi = {
   async getConversations()
   {
-    const res = await api.get("/conversations");
+    const res = await api.get("/api/conversations");
     return res.data;
   },
 
   async searchUsers(query)
   {
     const res = await api.get(
-      `/users/search?q=${encodeURIComponent(query)}`
+      `/api/users/search?q=${encodeURIComponent(query)}`
     );
 
     return res.data;
@@ -38,7 +18,7 @@ export const chatApi = {
 
   async startConversation(userId)
   {
-    const res = await api.post("/conversations/start", {
+    const res = await api.post("/api/conversations/start", {
       userId,
     });
 
@@ -48,7 +28,7 @@ export const chatApi = {
   async getMessages(conversationId, page = 1, limit = 20)
   {
     const res = await api.get(
-      `/messages/${conversationId}?page=${page}&limit=${limit}`
+      `/api/messages/${conversationId}?page=${page}&limit=${limit}`
     );
 
     return res.data;
@@ -59,7 +39,7 @@ export const chatApi = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await api.post("/upload", formData, {
+    const res = await api.post("/api/upload", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -68,7 +48,3 @@ export const chatApi = {
     return res.data;
   }
 };
-
-
-
-export default api;
