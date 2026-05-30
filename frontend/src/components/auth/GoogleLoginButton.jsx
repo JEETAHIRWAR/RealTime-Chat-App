@@ -47,7 +47,7 @@ export default function GoogleLoginButton()
             user: res.user,
           });
 
-          toast.success("Welcome!");
+          toast.success("Welcome! to Pulse- RealTime ChatApp");
 
           navigate(
             "/chat",
