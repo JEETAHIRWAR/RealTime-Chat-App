@@ -25,7 +25,7 @@ export default function GoogleLoginButton()
   }
 
   return (
-    <div className="w-full ">
+    <div className="w-full flex justify-center">
       <GoogleLogin
         useOneTap={false}
         width="420"
