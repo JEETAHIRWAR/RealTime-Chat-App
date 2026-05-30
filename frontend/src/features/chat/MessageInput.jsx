@@ -136,12 +136,6 @@ export default function MessageInput({
 
     setText((prev) => prev + emoji);
 
-    // Mobile me keyboard open na ho, isliye focus nahi kar rahe
-    if (!/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
-    {
-      taRef.current?.focus();
-    }
-
     if (conversationId)
     {
       emitTypingStart({ conversationId });
@@ -229,9 +223,17 @@ export default function MessageInput({
     e.preventDefault();
     e.stopPropagation();
 
+    if (document.activeElement)
+    {
+      document.activeElement.blur();
+    }
+
     taRef.current?.blur();
 
-    setShowEmoji((prev) => !prev);
+    setTimeout(() =>
+    {
+      setShowEmoji((prev) => !prev);
+    }, 0);
   };
 
   return (
@@ -321,9 +323,8 @@ export default function MessageInput({
 
           <button
             type="button"
-            onMouseDown={toggleEmojiPicker}
-            onTouchStart={toggleEmojiPicker}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
+            onPointerDown={toggleEmojiPicker}
+            className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
             tabIndex={-1}
           >
             <Smile size={18} />
