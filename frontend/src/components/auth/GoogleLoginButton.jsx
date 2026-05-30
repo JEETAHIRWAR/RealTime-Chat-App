@@ -25,57 +25,72 @@ export default function GoogleLoginButton()
   }
 
   return (
-    <GoogleLogin
-      useOneTap={false}
-      onSuccess={async (cred) =>
-      {
-        try
+    <div className="w-full ">
+      <GoogleLogin
+        useOneTap={false}
+        width="478"
+        size="large"
+        theme="outline"
+        text="signin_with"
+        shape="rectangular"
+        onSuccess={async (cred) =>
         {
-          if (!cred?.credential)
+          try
           {
-            toast.error("Google credential missing");
-            return;
-          }
+            if (!cred?.credential)
+            {
+              toast.error("Google credential missing");
+              return;
+            }
 
-          const res =
-            await authApi.google(
-              cred.credential
+            const res =
+              await authApi.google(
+                cred.credential
+              );
+
+            const token =
+              res?.accessToken || res?.token;
+
+            if (!token)
+            {
+              toast.error("Google login failed: token missing");
+              return;
+            }
+
+            setAuth({
+              token,
+              user: res.user,
+            });
+
+            toast.success("Welcome! to Pulse- RealTime ChatApp");
+
+            navigate(
+              "/chat",
+              {
+                replace: true
+              }
+            );
+          }
+          catch (e)
+          {
+            console.log(
+              "GOOGLE LOGIN FRONTEND ERROR:",
+              e?.response?.data || e.message
             );
 
-          setAuth({
-            token: res.accessToken,
-            user: res.user,
-          });
-
-          toast.success("Welcome! to Pulse- RealTime ChatApp");
-
-          navigate(
-            "/chat",
-            {
-              replace: true
-            }
-          );
-        }
-        catch (e)
+            toast.error(
+              e?.response?.data?.message ||
+              "Google login failed"
+            );
+          }
+        }}
+        onError={() =>
         {
-          console.log(
-            "GOOGLE LOGIN FRONTEND ERROR:",
-            e?.response?.data || e.message
-          );
-
           toast.error(
-            e?.response?.data?.message ||
             "Google login failed"
           );
-        }
-      }}
-      onError={() =>
-      {
-        toast.error(
-          "Google login failed"
-        );
-      }}
-      width="100%"
-    />
+        }}
+      />
+    </div>
   );
 }
