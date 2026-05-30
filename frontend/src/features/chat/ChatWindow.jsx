@@ -226,12 +226,16 @@ export default function ChatWindow({ conversationId })
   if (!conversationId)
   {
     return (
-      <div className="hidden flex-1 items-center justify-center md:flex">
-        <div className="flex flex-col items-center gap-3 text-center text-(--color-muted-fg)">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-(--color-accent) text-(--color-primary)">
+      <div className="hidden min-h-0 flex-1 items-center justify-center md:flex">
+        <div className="flex flex-col items-center gap-3 text-center text-[var(--color-muted-fg)]">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-primary)]">
             <MessageSquare size={28} />
           </div>
-          <div className="text-lg font-semibold text-(--color-fg)">Select a conversation</div>
+
+          <div className="text-lg font-semibold text-[var(--color-fg)]">
+            Select a conversation
+          </div>
+
           <div className="max-w-xs text-sm">
             Pick a chat from the sidebar or search for someone to start a new conversation.
           </div>
@@ -241,19 +245,30 @@ export default function ChatWindow({ conversationId })
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col bg-(--color-bg)">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-bg)]">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-(--color-border) bg-(--color-card) px-3 py-3 md:px-5">
+      <div className="flex shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-card)] px-3 py-3 md:px-5">
         <button
+          type="button"
           onClick={() => navigate("/chat")}
-          className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-muted) md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--color-muted)] md:hidden"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={20} />
         </button>
-        <Avatar name={other.name} src={other.avatar} size={40} online={isOnline} />
+
+        <Avatar
+          name={other.name}
+          src={other.avatar}
+          size={40}
+          online={isOnline}
+        />
+
         <div className="min-w-0 flex-1">
-          <div className="truncate font-semibold">{other.name || "Conversation"}</div>
-          <div className="truncate text-xs text-(--color-muted-fg)">
+          <div className="truncate font-semibold">
+            {other.name || "Conversation"}
+          </div>
+
+          <div className="truncate text-xs text-[var(--color-muted-fg)]">
             {isTyping ? "typing..." : isOnline ? "online" : "offline"}
           </div>
         </div>
@@ -263,35 +278,49 @@ export default function ChatWindow({ conversationId })
       <div
         ref={scrollerRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 pb-3 md:px-6"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 pb-3 md:px-6"
       >
         {loadingOlder && (
           <div className="mb-3 flex justify-center">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-(--color-primary) border-t-transparent" />
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
           </div>
         )}
+
         {loading ? (
           <div className="flex h-full items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-(--color-primary) border-t-transparent" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
           </div>
         ) : (
-          <div className="mx-auto flex max-w-3xl flex-col gap-2">
+          <div className="mx-auto flex min-h-full max-w-3xl flex-col gap-2">
             {messages.map((m) =>
             {
               const senderId =
-                m.senderId?._id || m.senderId || m.sender?.id || m.sender?._id;
+                m.senderId?._id ||
+                m.senderId ||
+                m.sender?.id ||
+                m.sender?._id;
 
               const isMe =
-                senderId?.toString() === (user?.id || user?._id)?.toString();
-              return <MessageBubble key={m.id || m._id || m.tempId} message={m} isMe={isMe} />;
+                senderId?.toString() ===
+                (user?.id || user?._id)?.toString();
+
+              return (
+                <MessageBubble
+                  key={m.id || m._id || m.tempId}
+                  message={m}
+                  isMe={isMe}
+                />
+              );
             })}
+
             {isTyping && (
               <div className="flex justify-start">
-                <div className="rounded-2xl rounded-bl-md bg-(--color-bubble-them)">
+                <div className="rounded-2xl rounded-bl-md bg-[var(--color-bubble-them)]">
                   <TypingIndicator />
                 </div>
               </div>
             )}
+
             <div ref={bottomRef} />
           </div>
         )}
