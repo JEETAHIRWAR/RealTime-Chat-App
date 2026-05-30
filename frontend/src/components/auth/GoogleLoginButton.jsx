@@ -28,12 +28,12 @@ export default function GoogleLoginButton()
     <div className="w-full flex justify-center">
       <GoogleLogin
         useOneTap={false}
-        width="400"
+        width="385"
         size="large"
         // size="medium"
         theme="outline"
         text="signin_with"
-        shape="rectangular"
+        shape="pill"
         onSuccess={async (cred) =>
         {
           try
