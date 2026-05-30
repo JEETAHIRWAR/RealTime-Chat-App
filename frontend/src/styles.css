@@ -50,14 +50,14 @@ body {
 
 
 /* Google Login Responsive */
-div[role="button"] {
+/* div[role="button"] {
   width: 100% !important;
 }
 
 iframe[title="Sign in with Google Button"] {
   width: 100% !important;
   max-width: 100% !important;
-}
+} */
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
