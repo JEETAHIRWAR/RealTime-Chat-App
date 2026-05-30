@@ -75,8 +75,37 @@ const messageSchema = new mongoose.Schema({
         trim: true
     },
 
+    /*
+    ========================================
+    Upload content MESSAGE
+    ========================================
+    */
 
+    messageType: {
+        type: String,
+        enum: ["text", "image", "file"],
+        default: "text"
+    },
 
+    fileUrl: {
+        type: String,
+        default: ""
+    },
+
+    fileName: {
+        type: String,
+        default: ""
+    },
+
+    fileSize: {
+        type: Number,
+        default: 0
+    },
+
+    mimeType: {
+        type: String,
+        default: ""
+    },
 
     /*
     ========================================

@@ -192,6 +192,37 @@ export default function ChatWindow({ conversationId })
     });
   };
 
+
+  const handleFileSend = async (file, caption = "") =>
+  {
+    try
+    {
+      const uploadRes = await chatApi.uploadFile(file);
+
+      const uploadedFile = uploadRes.file;
+
+      emitSendMessage({
+        conversationId,
+        receiverId: otherId,
+        message: caption || uploadedFile.fileName,
+        messageType: uploadedFile.mimeType.startsWith("image/")
+          ? "image"
+          : "file",
+        fileUrl: uploadedFile.fileUrl,
+        fileName: uploadedFile.fileName,
+        fileSize: uploadedFile.fileSize,
+        mimeType: uploadedFile.mimeType,
+      });
+    } catch (error)
+    {
+      console.log(
+        "File send error:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+
   if (!conversationId)
   {
     return (
@@ -262,7 +293,11 @@ export default function ChatWindow({ conversationId })
         )}
       </div>
 
-      <MessageInput conversationId={conversationId} onSend={handleSend} />
+      <MessageInput
+        conversationId={conversationId}
+        onSend={handleSend}
+        onFileSend={handleFileSend}
+      />
     </div>
   );
 }

@@ -7,10 +7,6 @@ const {
     decryptMessage
 } = require("../utils/encryption");
 
-
-
-
-
 /*
 ========================================
 SAFE DECRYPT
@@ -18,26 +14,17 @@ SAFE DECRYPT
 */
 const safeDecrypt = (value) =>
 {
-
     try
     {
-
         return value
             ? decryptMessage(value)
             : "";
-
-    } catch
-    {
-
-        return "";
-
     }
-
+    catch
+    {
+        return "";
+    }
 };
-
-
-
-
 
 /*
 ========================================
@@ -46,47 +33,44 @@ FIND OR CREATE CONVERSATION
 */
 const findOrCreateConversation =
     async (
-
         senderId,
         receiverId
-
     ) =>
     {
+        if (
+            senderId.toString() ===
+            receiverId.toString()
+        )
+        {
+            throw new Error(
+                "Cannot create conversation with yourself"
+            );
+        }
 
         let conversation =
             await Conversation.findOne({
-
                 participants: {
                     $all: [
                         senderId,
                         receiverId
-                    ]
+                    ],
+                    $size: 2
                 }
-
             });
 
         if (!conversation)
         {
-
             conversation =
                 await Conversation.create({
-
                     participants: [
                         senderId,
                         receiverId
                     ]
-
                 });
-
         }
 
         return conversation;
-
     };
-
-
-
-
 
 /*
 ========================================
@@ -97,15 +81,12 @@ Stores encrypted lastMessage in DB
 */
 const updateLastMessage =
     async (
-
         conversationId,
         senderId,
         message,
         receiverId
-
     ) =>
     {
-
         const conversation =
             await Conversation.findById(
                 conversationId
@@ -117,7 +98,9 @@ const updateLastMessage =
         }
 
         conversation.lastMessage =
-            encryptMessage(message);
+            encryptMessage(
+                message || "Message"
+            );
 
         conversation.lastMessageSender =
             senderId;
@@ -138,12 +121,7 @@ const updateLastMessage =
         await conversation.save();
 
         return conversation;
-
     };
-
-
-
-
 
 /*
 ========================================
@@ -155,7 +133,6 @@ Returns decrypted lastMessage to frontend
 const getUserConversations =
     async (userId) =>
     {
-
         const conversations =
             await Conversation.find({
                 participants: userId
@@ -168,34 +145,32 @@ const getUserConversations =
                     lastMessageAt: -1
                 });
 
-        return conversations.map((conversation) =>
-        {
+        return conversations.map(
+            (conversation) =>
+            {
+                const conv =
+                    conversation.toObject();
 
-            const conv =
-                conversation.toObject();
+                const unreadCount =
+                    Number(
+                        conversation.unreadCounts?.get(
+                            userId.toString()
+                        ) || 0
+                    );
 
-            const unreadCount =
-                conversation.unreadCounts?.get(
-                    userId.toString()
-                ) || 0;
+                return {
+                    ...conv,
 
-            return {
-                ...conv,
+                    lastMessage:
+                        safeDecrypt(
+                            conv.lastMessage
+                        ),
 
-                lastMessage: safeDecrypt(
-                    conv.lastMessage
-                ),
-
-                unreadCount
-            };
-
-        });
-
+                    unreadCount
+                };
+            }
+        );
     };
-
-
-
-
 
 /*
 ========================================
@@ -204,13 +179,10 @@ RESET UNREAD COUNT
 */
 const resetUnreadCount =
     async (
-
         conversationId,
         userId
-
     ) =>
     {
-
         const conversation =
             await Conversation.findById(
                 conversationId
@@ -229,12 +201,7 @@ const resetUnreadCount =
         await conversation.save();
 
         return conversation;
-
     };
-
-
-
-
 
 /*
 ========================================
@@ -242,13 +209,8 @@ EXPORT REPOSITORY
 ========================================
 */
 module.exports = {
-
     findOrCreateConversation,
-
     updateLastMessage,
-
     getUserConversations,
-
     resetUnreadCount
-
 };

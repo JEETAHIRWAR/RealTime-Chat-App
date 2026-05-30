@@ -125,7 +125,15 @@ exports.login = async (req, res) =>
         SAVE REFRESH TOKEN
         ========================================
         */
-        user.refreshToken = refreshToken;
+        const hashedRefreshToken = await bcrypt.hash(
+            refreshToken,
+            10
+        );
+
+        user.refreshToken = await bcrypt.hash(
+            refreshToken,
+            10
+        );
 
         await user.save();
 
@@ -448,18 +456,18 @@ exports.refreshAccessToken = async (
         TOKEN MISMATCH
         ========================================
         */
-        if (
-            user.refreshToken !== refreshToken
-        )
+        const isRefreshTokenValid =
+            await bcrypt.compare(
+                refreshToken,
+                user.refreshToken
+            );
+
+        if (!isRefreshTokenValid)
         {
-
             return res.status(401).json({
-
                 success: false,
                 message: "Invalid refresh token"
-
             });
-
         }
 
 

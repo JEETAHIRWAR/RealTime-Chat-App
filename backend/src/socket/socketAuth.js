@@ -1,44 +1,44 @@
-const jwt = require("jsonwebtoken");
+// const jwt = require("jsonwebtoken");
 
-module.exports = (socket, next) =>
-{
-    try
-    {
+// module.exports = (socket, next) =>
+// {
+//     try
+//     {
 
-        const token =
-            socket.handshake.auth.token;
+//         const token =
+//             socket.handshake.auth.token;
 
-        if (!token)
-        {
-            return next(
-                new Error("Unauthorized")
-            );
-        }
-
-
+//         if (!token)
+//         {
+//             return next(
+//                 new Error("Unauthorized")
+//             );
+//         }
 
 
 
-        const decoded =
-            jwt.verify(
-                token,
-                process.env.JWT_SECRET
-            );
+
+
+//         const decoded =
+//             jwt.verify(
+//                 token,
+//                 process.env.JWT_SECRET
+//             );
 
 
 
-        socket.user = decoded;
+//         socket.user = decoded;
 
-        next();
+//         next();
 
-    }
+//     }
 
-    catch (error)
-    {
+//     catch (error)
+//     {
 
-        next(
-            new Error("Unauthorized")
-        );
+//         next(
+//             new Error("Unauthorized")
+//         );
 
-    }
-};
+//     }
+// };

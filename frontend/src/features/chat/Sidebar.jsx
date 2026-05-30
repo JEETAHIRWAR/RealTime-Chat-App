@@ -230,7 +230,7 @@ export default function Sidebar({ onHideSidebar })
     <aside className="flex h-full w-full flex-col border-r border-[var(--color-border)] bg-[var(--color-card)] md:w-80">
 
       {/* App Header */}
-      <div className="flex items-center justify-between border-b border-[var(--color-border)] p-4">
+      <div className="flex items-center justify-between border- border-[var(--color-border)] p-4">
         <div>
           <div className="text-lg font-bold">
             Pulse
@@ -370,12 +370,17 @@ export default function Sidebar({ onHideSidebar })
               id?.toString();
 
             const lastMessageText =
-              typeof c?.lastMessage === "string"
-                ? c.lastMessage
-                : c?.lastMessage?.content ||
-                c?.lastMessage?.text ||
-                c?.lastMessage?.message ||
-                "Say hi 👋";
+              c?.messageType === "image" ||
+                c?.lastMessageType === "image"
+                ? "📷 Photo"
+                : typeof c?.lastMessage === "string"
+                  ? c.lastMessage
+                  : c?.lastMessage?.messageType === "image"
+                    ? "📷 Photo"
+                    : c?.lastMessage?.content ||
+                    c?.lastMessage?.text ||
+                    c?.lastMessage?.message ||
+                    "Say hi 👋";
 
             const unread =
               active
@@ -436,7 +441,7 @@ export default function Sidebar({ onHideSidebar })
 
 
       {/* Bottom Profile */}
-      <div className="flex items-center gap-3 border-t border-[var(--color-border)] p-4">
+      <div className="flex items-center gap-3 border- border-[var(--color-border)] p-4">
         <Avatar
           name={user?.name || user?.email}
           src={user?.avatar}

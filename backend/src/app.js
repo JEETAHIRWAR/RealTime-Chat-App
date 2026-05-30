@@ -2,24 +2,8 @@
 ========================================
 IMPORT ENV VARIABLES
 ========================================
-Loads variables from .env file
-Example:
-PORT
-MONGO_URI
-JWT_SECRET
-========================================
 */
 require("dotenv").config();
-
-
-const socketAuth = require(
-    "./socket/middleware/socketAuth"
-);
-
-const conversationRoutes =
-require("./routes/conversation.routes");
-
-const userRoutes = require("./routes/user.routes");
 
 /*
 ========================================
@@ -29,8 +13,7 @@ CORE PACKAGES
 const express = require("express");
 const mongoose = require("mongoose");
 const http = require("http");
-
-
+const path = require("path");
 
 /*
 ========================================
@@ -41,16 +24,12 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
-
-
 /*
 ========================================
 SOCKET.IO
 ========================================
 */
 const { Server } = require("socket.io");
-
-
 
 /*
 ========================================
@@ -59,146 +38,96 @@ ROUTES
 */
 const authRoutes = require("./routes/auth.routes");
 const messageRoutes = require("./routes/message.routes");
-
+const conversationRoutes = require("./routes/conversation.routes");
+const userRoutes = require("./routes/user.routes");
+const uploadRoutes = require("./routes/upload.routes");
 
 /*
 ========================================
-SOCKET HANDLER
-========================================
-Contains all realtime socket logic
+SOCKET
 ========================================
 */
+const socketAuth = require("./socket/middleware/socketAuth");
 const socketHandler = require("./socket/socket");
-
-
 
 /*
 ========================================
-INITIALIZE EXPRESS APP
+APP CONFIG
 ========================================
 */
 const app = express();
-
-
-
-/*
-========================================
-CREATE RAW HTTP SERVER
-========================================
-Socket.IO works on top of raw HTTP server
-NOT directly on Express app
-========================================
-*/
 const server = http.createServer(app);
 
-
+const PORT = process.env.PORT || 5000;
+const FRONTEND_URL =
+    process.env.FRONTEND_URL ||
+    "http://localhost:8080";
 
 /*
 ========================================
-INITIALIZE SOCKET.IO SERVER
+SOCKET.IO SETUP
 ========================================
 */
 const io = new Server(server, {
-
     cors: {
-        origin: "http://localhost:8080"
+        origin: FRONTEND_URL,
+        credentials: true
     }
-
 });
 
-/*
-========================================
-SOCKET AUTH MIDDLEWARE
-========================================
-*/
 io.use(socketAuth);
 
-/*
-========================================
-INITIALIZE SOCKET EVENTS
-========================================
-*/
 socketHandler(io);
 
-
-
 /*
 ========================================
-SECURITY MIDDLEWARE
-========================================
-helmet() adds secure HTTP headers
+GLOBAL MIDDLEWARES
 ========================================
 */
-app.use(helmet());
+app.use(
+    helmet({
+        crossOriginResourcePolicy: false
+    })
+);
 
+app.use(
+    cors({
+        origin: FRONTEND_URL,
+        credentials: true
+    })
+);
 
-
-/*
-========================================
-ENABLE CORS
-========================================
-Allows frontend to communicate
-with backend
-========================================
-*/
-// app.use(cors());
-app.use(cors({
-    origin: "http://localhost:8080",
-    credentials: true
-}));
-
-
-
-/*
-========================================
-BODY PARSER
-========================================
-Reads incoming JSON request body
-========================================
-*/
 app.use(express.json());
 
+app.use(
+    express.urlencoded({
+        extended: true
+    })
+);
 
-
-/*
-========================================
-FORM DATA PARSER
-========================================
-Reads URL encoded form data
-========================================
-*/
-app.use(express.urlencoded({
-    extended: true
-}));
-
-
-
-/*
-========================================
-LOGGER
-========================================
-Logs API requests in terminal
-========================================
-*/
 app.use(morgan("dev"));
 
-
+/*
+========================================
+STATIC FILES
+========================================
+*/
+app.use(
+    "/uploads",
+    express.static(
+        path.join(__dirname, "../uploads")
+    )
+);
 
 /*
 ========================================
-TEST ROUTE
-========================================
-Used to verify server is running
+HEALTH CHECK
 ========================================
 */
 app.get("/", (req, res) =>
 {
-
     res.send("Realtime Chat API Running");
-
 });
-
-
 
 /*
 ========================================
@@ -207,51 +136,32 @@ API ROUTES
 */
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/conversations", conversationRoutes);
 app.use("/api/users", userRoutes);
-
-app.use(
-    "/api/conversations",
-    conversationRoutes
-);
+app.use("/api/upload", uploadRoutes);
 
 /*
 ========================================
-DATABASE CONNECTION
-========================================
-Connect MongoDB first
-Then start server
+DATABASE + SERVER START
 ========================================
 */
-mongoose.connect(process.env.MONGO_URI)
-
+mongoose
+    .connect(process.env.MONGO_URI)
     .then(() =>
     {
-
         console.log("MongoDB Connected");
 
-
-        /*
-        ========================================
-        START SERVER
-        ========================================
-        */
-        server.listen(process.env.PORT, () =>
+        server.listen(PORT, () =>
         {
-
             console.log(
-                `Server running on port ${process.env.PORT}`
+                `Server running on port ${PORT}`
             );
-
         });
-
     })
-
     .catch((error) =>
     {
-
         console.log(
             "DB ERROR:",
             error.message
         );
-
     });

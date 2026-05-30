@@ -223,10 +223,8 @@ const socketHandler = (io) =>
 
             async (payload = {}) =>
             {
-
                 try
                 {
-
                     /*
                     ========================
                     PAYLOAD VALIDATION
@@ -235,25 +233,42 @@ const socketHandler = (io) =>
                     const {
                         receiverId,
                         conversationId,
-                        message
+                        message = "",
+                        messageType = "text",
+                        fileUrl = "",
+                        fileName = "",
+                        fileSize = 0,
+                        mimeType = ""
                     } = payload;
 
-
-
-                    if (
-                        !receiverId ||
-                        !conversationId ||
-                        !message?.trim()
-                    )
+                    if (!receiverId || !conversationId)
                     {
-
                         return;
-
                     }
 
+                    if (messageType === "text" && !message.trim())
+                    {
+                        return;
+                    }
 
+                    if (messageType !== "text" && !fileUrl)
+                    {
+                        return;
+                    }
 
+                    /*
+                    ========================================
+                    FIND OR CREATE CONVERSATION
+                    ========================================
+                    */
+                    const conversation =
+                        await findOrCreateConversation(
+                            userId,
+                            receiverId
+                        );
 
+                    const finalConversationId =
+                        conversationId || conversation._id;
 
                     /*
                     ========================
@@ -262,22 +277,8 @@ const socketHandler = (io) =>
                     */
                     const encryptedMessage =
                         encryptMessage(
-                            message
+                            message || fileName || ""
                         );
-
-                    /*
-                    ========================================
-                    FIND OR CREATE CONVERSATION
-                    ========================================
-                    */
-                    const conversation = await findOrCreateConversation(
-                        userId,
-                        receiverId
-                    );
-
-                    const finalConversationId = conversationId || conversation._id;
-
-
 
                     /*
                     ========================
@@ -287,29 +288,46 @@ const socketHandler = (io) =>
                     const messageData =
                         await Message.create({
 
-                            conversationId: finalConversationId,
+                            conversationId:
+                                finalConversationId,
 
-                            senderId: userId,
+                            senderId:
+                                userId,
 
                             receiverId,
 
                             message:
-                                encryptedMessage
+                                encryptedMessage,
+
+                            messageType,
+
+                            fileUrl,
+
+                            fileName,
+
+                            fileSize,
+
+                            mimeType
 
                         });
 
-
+                    /*
+                    ========================
+                    DELIVERED STATUS
+                    ========================
+                    */
                     const receiverIsOnline =
-                        getOnlineUsers().includes(receiverId.toString());
+                        getOnlineUsers().includes(
+                            receiverId.toString()
+                        );
 
                     if (receiverIsOnline)
                     {
-                        messageData.status = "delivered";
+                        messageData.status =
+                            "delivered";
+
                         await messageData.save();
                     }
-
-
-
 
                     /*
                     ========================
@@ -321,7 +339,8 @@ const socketHandler = (io) =>
                         _id:
                             messageData._id,
 
-                        conversationId: finalConversationId,
+                        conversationId:
+                            finalConversationId,
 
                         senderId:
                             messageData.senderId,
@@ -334,6 +353,21 @@ const socketHandler = (io) =>
                                 messageData.message
                             ),
 
+                        messageType:
+                            messageData.messageType,
+
+                        fileUrl:
+                            messageData.fileUrl,
+
+                        fileName:
+                            messageData.fileName,
+
+                        fileSize:
+                            messageData.fileSize,
+
+                        mimeType:
+                            messageData.mimeType,
+
                         status:
                             messageData.status,
 
@@ -341,7 +375,6 @@ const socketHandler = (io) =>
                             messageData.createdAt
 
                     };
-
 
                     /*
                     ========================================
@@ -354,12 +387,11 @@ const socketHandler = (io) =>
 
                         userId,
 
-                        message,
+                        message || fileName || "File",
 
                         receiverId
 
                     );
-
 
                     /*
                     ========================================
@@ -367,46 +399,33 @@ const socketHandler = (io) =>
                     ========================================
                     */
                     const senderConversations =
-
                         await getUserConversations(
                             userId
                         );
 
-
-
                     const receiverConversations =
-
                         await getUserConversations(
                             receiverId
                         );
-
-
-
 
                     /*
                     ========================================
                     REALTIME SIDEBAR UPDATE
                     ========================================
                     */
-                    io.to(userId.toString()).emit(
-
+                    io.to(
+                        userId.toString()
+                    ).emit(
                         "conversations_updated",
-
                         senderConversations
-
                     );
 
-
-
-                    io.to(receiverId.toString()).emit(
-
+                    io.to(
+                        receiverId.toString()
+                    ).emit(
                         "conversations_updated",
-
                         receiverConversations
-
                     );
-
-
 
                     /*
                     ========================
@@ -416,69 +435,32 @@ const socketHandler = (io) =>
                     io.to(
                         receiverId.toString()
                     ).emit(
-
                         "receive_message",
-
                         formattedMessage
-
                     );
-
-
-
-
-
-                    /*
-                    ========================
-                    SEND TO CONVERSATION ROOM
-                    =================================
-                    Sync active conversation tabs
-                    =================================
-                    */
-                    io.to(
-                        conversationId.toString()
-                    ).emit(
-
-                        "conversation_message",
-
-                        formattedMessage
-
-                    );
-
-
-
-
 
                     /*
                     ========================
                     MULTI-DEVICE SYNC
-                    SEND TO ALL
-                    SENDER DEVICES
+                    SEND TO ALL SENDER DEVICES
                     ========================
                     */
                     io.to(
                         userId.toString()
                     ).emit(
-
                         "message_sent",
-
                         formattedMessage
-
                     );
-
                 }
 
                 catch (error)
                 {
-
                     console.log(
                         "SEND MESSAGE ERROR:",
                         error.message
                     );
-
                 }
-
             }
-
         );
 
 
@@ -606,10 +588,10 @@ const socketHandler = (io) =>
 
 
         /*
-====================================
-TYPING STOP
-====================================
-*/
+        ====================================
+        TYPING STOP
+        ====================================
+        */
         socket.on(
             "typing_stop",
 
