@@ -164,7 +164,10 @@ export default function MessageInput({
 
     emitTypingStop({ conversationId });
 
-    taRef.current?.focus();
+    if (!/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
+    {
+      taRef.current?.focus();
+    }
   };
 
   const handleFileChange = (e) =>
@@ -220,6 +223,16 @@ export default function MessageInput({
 
   const isSelectedImage =
     selectedFile?.type?.startsWith("image/");
+
+  const toggleEmojiPicker = (e) =>
+  {
+    e.preventDefault();
+    e.stopPropagation();
+
+    taRef.current?.blur();
+
+    setShowEmoji((prev) => !prev);
+  };
 
   return (
     <>
@@ -298,7 +311,7 @@ export default function MessageInput({
       >
         <div ref={emojiRef} className="relative">
           {showEmoji && (
-            <div className="absolute bottom-12 left-0 z-50">
+            <div className="absolute bottom-14 left-0 z-50 max-w-[90vw]">
               <EmojiPicker
                 theme="dark"
                 onEmojiClick={addEmoji}
@@ -308,9 +321,8 @@ export default function MessageInput({
 
           <button
             type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onTouchStart={(e) => e.preventDefault()}
-            onClick={() => setShowEmoji((prev) => !prev)}
+            onMouseDown={toggleEmojiPicker}
+            onTouchStart={toggleEmojiPicker}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
             tabIndex={-1}
           >
