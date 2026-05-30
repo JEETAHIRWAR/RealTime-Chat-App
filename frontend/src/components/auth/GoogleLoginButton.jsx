@@ -4,37 +4,77 @@ import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-export default function GoogleLoginButton() {
+export default function GoogleLoginButton()
+{
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  if (!clientId) {
+  if (!clientId)
+  {
     return (
       <button
         type="button"
         disabled
-        title="Set VITE_GOOGLE_CLIENT_ID in .env to enable"
+        title="Set VITE_GOOGLE_CLIENT_ID in .env"
         className="h-11 w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] text-sm text-[var(--color-muted-fg)]"
       >
-        Continue with Google (configure VITE_GOOGLE_CLIENT_ID)
+        Continue with Google
       </button>
     );
   }
 
   return (
     <GoogleLogin
-      onSuccess={async (cred) => {
-        try {
-          const res = await authApi.google(cred.credential);
-          setAuth({ token: res.token, user: res.user });
+      useOneTap={false}
+      onSuccess={async (cred) =>
+      {
+        try
+        {
+          if (!cred?.credential)
+          {
+            toast.error("Google credential missing");
+            return;
+          }
+
+          const res =
+            await authApi.google(
+              cred.credential
+            );
+
+          setAuth({
+            token: res.accessToken,
+            user: res.user,
+          });
+
           toast.success("Welcome!");
-          navigate("/chat");
-        } catch (e) {
-          toast.error(e?.response?.data?.message || "Google login failed");
+
+          navigate(
+            "/chat",
+            {
+              replace: true
+            }
+          );
+        }
+        catch (e)
+        {
+          console.log(
+            "GOOGLE LOGIN FRONTEND ERROR:",
+            e?.response?.data || e.message
+          );
+
+          toast.error(
+            e?.response?.data?.message ||
+            "Google login failed"
+          );
         }
       }}
-      onError={() => toast.error("Google login failed")}
+      onError={() =>
+      {
+        toast.error(
+          "Google login failed"
+        );
+      }}
       width="100%"
     />
   );

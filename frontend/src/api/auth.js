@@ -14,7 +14,7 @@ export const authApi = {
   requestPhoneOtp: (phone) => api.post("/api/auth/send-phone-otp", { phone }).then((r) => r.data),
   verifyPhoneOtp: (phone, otp) => api.post("/api/auth/verify-phone-otp", { phone, otp }).then((r) => r.data),
 
-  // GOOGLE (YOU DON'T HAVE YET IN BACKEND)
+  // GOOGLE 
   google: (credential) =>
     api.post("/api/auth/google-login", { token: credential }).then((r) => r.data),
 
