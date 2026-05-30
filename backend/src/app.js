@@ -70,7 +70,7 @@ SOCKET.IO SETUP
 */
 const io = new Server(server, {
     cors: {
-        origin: FRONTEND_URL,
+        origin: process.env.FRONTEND_URL,
         credentials: true
     }
 });
