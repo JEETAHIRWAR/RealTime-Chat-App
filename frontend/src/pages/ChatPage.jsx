@@ -11,7 +11,7 @@ export default function ChatPage() {
   const [sidebarHidden, setSidebarHidden] = useState(false);
 
   return (
-    <div className="relative flex h-screen w-screen overflow-hidden">
+    <div className="relative flex h-[100dvh] w-screen overflow-hidden">
       {!sidebarHidden && (
         <div
           className={`${
@@ -45,40 +45,3 @@ export default function ChatPage() {
   );
 }
 
-
-
-
-
-
-
-
-// import { useParams } from "react-router-dom";
-
-// import Sidebar from "@/features/chat/Sidebar";
-// import ChatWindow from "@/features/chat/ChatWindow";
-
-// export default function ChatPage() {
-//   const { conversationId } = useParams();
-
-//   return (
-//     <div className="flex h-screen w-screen overflow-hidden">
-//       {/* SIDEBAR */}
-//       <div
-//         className={`${
-//           conversationId ? "hidden md:flex" : "flex"
-//         } md:w-80 w-full`}
-//       >
-//         <Sidebar />
-//       </div>
-
-//       {/* CHAT WINDOW */}
-//       <div
-//         className={`${
-//           conversationId ? "flex" : "hidden md:flex"
-//         } flex-1`}
-//       >
-//         <ChatWindow conversationId={conversationId} />
-//       </div>
-//     </div>
-//   );
-// }

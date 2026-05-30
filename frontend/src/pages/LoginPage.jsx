@@ -65,10 +65,12 @@ export default function LoginPage()
       {
         toast.error("User not registered. Register here...");
 
-        setTimeout(() =>
-        {
-          navigate("/signup");
-        }, 1500);
+        navigate("/signup", {
+          state: {
+            email,
+            message: "User not registered. Register here..."
+          }
+        });
 
         return;
       }

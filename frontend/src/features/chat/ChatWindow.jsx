@@ -241,7 +241,7 @@ export default function ChatWindow({ conversationId })
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-(--color-bg)">
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-(--color-bg)">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-(--color-border) bg-(--color-card) px-3 py-3 md:px-5">
         <button
@@ -260,7 +260,11 @@ export default function ChatWindow({ conversationId })
       </div>
 
       {/* Messages */}
-      <div ref={scrollerRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-3 py-4 md:px-6">
+      <div
+        ref={scrollerRef}
+        onScroll={onScroll}
+        className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 pb-3 md:px-6"
+      >
         {loadingOlder && (
           <div className="mb-3 flex justify-center">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-(--color-primary) border-t-transparent" />

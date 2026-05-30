@@ -232,21 +232,21 @@ export default function Sidebar({ onHideSidebar })
       {/* App Header */}
       <div className="flex items-center justify-between border- border-[var(--color-border)] p-4">
         <div>
-          <div className="text-lg font-bold">
+          <div className="text-xl font-bold md:text-2xl">
             Pulse
           </div>
-          <div className="text-xs text-[var(--color-muted-fg)]">
+          <div className="text-xs text-[var(--color-muted-fg)] md:text-sm">
             Realtime Chat
           </div>
         </div>
 
         <button
           type="button"
-          onClick={onHideSidebar}
+          // onClick={onHideSidebar}
           className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--color-muted)]"
           title="Hide sidebar"
         >
-          <PanelLeftClose size={17} />
+          {/* <PanelLeftClose size={17} /> */}
         </button>
       </div>
 

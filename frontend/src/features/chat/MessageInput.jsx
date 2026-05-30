@@ -229,7 +229,7 @@ export default function MessageInput({
 
       <form
         onSubmit={submit}
-        className="relative flex items-end gap-2 border-t border-[var(--color-border)] bg-[var(--color-card)] p-3"
+        className="relative flex shrink-0 items-end gap-2 border-t border-(--color-border) bg-(--color-card) p-2.5 pb-[max(10px,env(safe-area-inset-bottom))] md:p-3"
       >
         {showEmoji && (
           <div className="absolute bottom-16 left-3 z-50">
@@ -274,7 +274,7 @@ export default function MessageInput({
           onKeyDown={onKey}
           placeholder="Type a message..."
           disabled={disabled}
-          className="max-h-32 min-h-[40px] flex-1 resize-none rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
         />
 
         <Button
