@@ -58,7 +58,22 @@ export default function LoginPage()
 
     } catch (err)
     {
-      toast.error(err?.response?.data?.message || "Invalid credentials");
+      const code = err?.response?.data?.code;
+      const message = err?.response?.data?.message;
+
+      if (code === "USER_NOT_FOUND")
+      {
+        toast.error("User not registered. Register here...");
+
+        setTimeout(() =>
+        {
+          navigate("/signup");
+        }, 1500);
+
+        return;
+      }
+
+      toast.error(message || "Invalid credentials");
     } finally
     {
       setLoading(false);
@@ -112,8 +127,8 @@ export default function LoginPage()
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex items-center justify-center gap-1.5 rounded-[calc(var(--radius)-4px)] py-2 text-xs font-medium transition ${tab === t.id
-                  ? "bg-[var(--color-card)] text-[var(--color-fg)] shadow-sm"
-                  : "text-[var(--color-muted-fg)] hover:text-[var(--color-fg)]"
+                ? "bg-[var(--color-card)] text-[var(--color-fg)] shadow-sm"
+                : "text-[var(--color-muted-fg)] hover:text-[var(--color-fg)]"
                 }`}
             >
               <Icon size={14} />

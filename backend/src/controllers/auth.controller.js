@@ -82,12 +82,11 @@ exports.login = async (req, res) =>
 
         if (!user)
         {
-
-            return res.status(400).json({
+            return res.status(404).json({
                 success: false,
-                message: "Invalid credentials"
+                code: "USER_NOT_FOUND",
+                message: "User not registered"
             });
-
         }
 
         // COMPARE PASSWORD
@@ -98,12 +97,11 @@ exports.login = async (req, res) =>
 
         if (!isMatch)
         {
-
             return res.status(400).json({
                 success: false,
-                message: "Invalid credentials"
+                code: "INVALID_PASSWORD",
+                message: "Invalid password"
             });
-
         }
 
         /*
