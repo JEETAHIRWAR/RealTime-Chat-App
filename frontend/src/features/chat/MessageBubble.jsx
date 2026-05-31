@@ -50,7 +50,7 @@ export default function MessageBubble({
 
   const longPressTimer = useRef(null);
   const longPressTargetRef = useRef(null);
-  const [reactionPosition, setReactionPosition] = useState("top");
+  const [reactionStyle, setReactionStyle] = useState({});
 
   const text = message.message || message.content || "";
 
@@ -75,14 +75,29 @@ export default function MessageBubble({
     const rect =
       e?.currentTarget?.getBoundingClientRect?.();
 
-    if (rect && rect.top < 90)
+    if (!rect)
     {
-      setReactionPosition("bottom");
+      setActiveReactionMessage(messageId);
+      return;
     }
-    else
-    {
-      setReactionPosition("top");
-    }
+
+    const isNearTop =
+      rect.top < 120;
+
+    const top =
+      isNearTop
+        ? rect.bottom + 8
+        : rect.top - 58;
+
+    const left =
+      isMe
+        ? Math.max(12, rect.right - 420)
+        : Math.max(12, rect.left);
+
+    setReactionStyle({
+      top,
+      left,
+    });
 
     setActiveReactionMessage(messageId);
   };
@@ -161,11 +176,8 @@ export default function MessageBubble({
           <motion.div
             initial={{ opacity: 0, scale: 0.85, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className={`absolute z-50 flex w-fit items-center gap-2 rounded-full bg-[#202c33] px-3 py-2 shadow-2xl ${reactionPosition === "top"
-              ? "-top-14"
-              : "top-full mt-2"
-              } ${isMe ? "right-0" : "left-0"
-              }`}
+            style={reactionStyle}
+            className="fixed z-[9999] flex w-fit items-center gap-2 rounded-full bg-[#202c33] px-3 py-2 shadow-2xl"
           >
             {reactionEmojis.map((emoji) => (
               <button

@@ -1,14 +1,16 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import
+  {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+  } from "react";
 
-import {
-  ArrowLeft,
-  MessageSquare,
-} from "lucide-react";
+import
+  {
+    ArrowLeft,
+    MessageSquare,
+  } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -22,12 +24,13 @@ import { useChatStore } from "@/store/chatStore";
 
 import { chatApi } from "@/api/chat";
 
-import {
-  emitSendMessage,
-  emitMarkConversationRead,
-  emitMessageSeen,
-  joinConversation,
-} from "@/socket/socket";
+import
+  {
+    emitSendMessage,
+    emitMarkConversationRead,
+    emitMessageSeen,
+    joinConversation,
+  } from "@/socket/socket";
 
 export default function ChatWindow({ conversationId })
 {
@@ -55,10 +58,10 @@ export default function ChatWindow({ conversationId })
     useState(false);
 
   const [hasMore, setHasMore] =
-  useState(true);
+    useState(true);
 
   const [activeReactionMessage, setActiveReactionMessage] =
-  useState(null);
+    useState(null);
 
   const scrollerRef =
     useRef(null);
@@ -301,7 +304,7 @@ export default function ChatWindow({ conversationId })
 
       if (
         senderId?.toString() !==
-          currentUserId?.toString() &&
+        currentUserId?.toString() &&
         m.status !== "seen"
       )
       {
@@ -519,7 +522,11 @@ export default function ChatWindow({ conversationId })
       {/* Messages */}
       <div
         ref={scrollerRef}
-        onScroll={onScroll}
+        onScroll={(e) =>
+        {
+          setActiveReactionMessage(null);
+          onScroll(e);
+        }}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 pb-3 md:px-6"
       >
         {loadingOlder && (
