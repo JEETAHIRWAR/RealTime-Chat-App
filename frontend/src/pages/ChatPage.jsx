@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PanelLeftOpen } from "lucide-react";
 
@@ -11,13 +11,60 @@ export default function ChatPage()
 
   const [sidebarHidden, setSidebarHidden] = useState(false);
 
+  const [viewport, setViewport] = useState({
+    height: window.visualViewport?.height || window.innerHeight,
+    offsetTop: window.visualViewport?.offsetTop || 0,
+  });
+
+  useEffect(() =>
+  {
+    const updateViewport = () =>
+    {
+      setViewport({
+        height: window.visualViewport?.height || window.innerHeight,
+        offsetTop: window.visualViewport?.offsetTop || 0,
+      });
+    };
+
+    updateViewport();
+
+    window.visualViewport?.addEventListener(
+      "resize",
+      updateViewport
+    );
+
+    window.visualViewport?.addEventListener(
+      "scroll",
+      updateViewport
+    );
+
+    return () =>
+    {
+      window.visualViewport?.removeEventListener(
+        "resize",
+        updateViewport
+      );
+
+      window.visualViewport?.removeEventListener(
+        "scroll",
+        updateViewport
+      );
+    };
+  }, []);
+
+
   return (
-    <div className="fixed inset-0 flex h-[100dvh] max-h-[100dvh] w-screen overflow-hidden bg-[var(--color-bg)]">
+    <div
+      className="fixed left-0 top-0 flex w-screen overflow-hidden bg-[var(--color-bg)]"
+      style={{
+        height: `${viewport.height}px`,
+        transform: `translateY(${viewport.offsetTop}px)`,
+      }}
+    >
       {!sidebarHidden && (
         <div
-          className={`${
-            conversationId ? "hidden md:flex" : "flex"
-          } min-h-0 shrink-0 md:w-80 w-full`}
+          className={`${conversationId ? "hidden md:flex" : "flex"
+            } min-h-0 shrink-0 md:w-80 w-full`}
         >
           <Sidebar
             onHideSidebar={() => setSidebarHidden(true)}
@@ -37,9 +84,8 @@ export default function ChatPage()
       )}
 
       <div
-        className={`${
-          conversationId ? "flex" : "hidden md:flex"
-        } min-h-0 flex-1 overflow-hidden`}
+        className={`${conversationId ? "flex" : "hidden md:flex"
+          } min-h-0 flex-1 overflow-hidden`}
       >
         <ChatWindow conversationId={conversationId} />
       </div>
