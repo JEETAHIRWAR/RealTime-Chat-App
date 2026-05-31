@@ -456,11 +456,28 @@ export function connectSocket(token)
   );
 
 
+  /*
+  ========================================
+  MESSAGE REACTION UPDATED
+  ========================================
+  */
+  socket.on(
+    "message_reaction_updated",
 
+    (data = {}) =>
+    {
+      console.log(
+        "REACTION UPDATE RECEIVED:",
+        data
+      );
 
-
-
-
+      chat.updateMessageReactions(
+        data.conversationId,
+        data.messageId,
+        data.reactions || []
+      );
+    }
+  );
 
   /*
   ========================================
@@ -760,6 +777,24 @@ export function emitMessageSeen(
 
   }
 
+}
+
+/*
+========================================
+MESSAGE REACTION
+========================================
+*/
+export function emitMessageReaction(
+  payload = {}
+)
+{
+  if (socket?.connected)
+  {
+    socket.emit(
+      "message_reaction",
+      payload
+    );
+  }
 }
 
 

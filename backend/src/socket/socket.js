@@ -371,6 +371,8 @@ const socketHandler = (io) =>
                         status:
                             messageData.status,
 
+                        reactions: messageData.reactions || [],
+
                         createdAt:
                             messageData.createdAt
 
@@ -544,6 +546,137 @@ const socketHandler = (io) =>
 
             }
 
+        );
+
+        /*
+====================================
+MESSAGE REACTION
+====================================
+Adds / updates / removes reaction
+====================================
+*/
+        socket.on(
+            "message_reaction",
+
+            async (payload = {}) =>
+            {
+                try
+                {
+                    const {
+                        messageId,
+                        conversationId,
+                        emoji
+                    } = payload;
+
+                    if (!messageId || !conversationId)
+                    {
+                        return;
+                    }
+
+                    const message =
+                        await Message.findOne({
+                            _id: messageId,
+                            conversationId
+                        });
+
+                    if (!message)
+                    {
+                        return;
+                    }
+
+                    const userReactionIndex =
+                        message.reactions.findIndex(
+                            (reaction) =>
+                                String(reaction.userId) ===
+                                String(userId)
+                        );
+
+
+                    /*
+                    ========================
+                    REMOVE REACTION
+                    If same emoji clicked again
+                    ========================
+                    */
+                    if (
+                        userReactionIndex !== -1 &&
+                        message.reactions[userReactionIndex].emoji === emoji
+                    )
+                    {
+                        message.reactions.splice(
+                            userReactionIndex,
+                            1
+                        );
+                    }
+
+                    /*
+                    ========================
+                    UPDATE EXISTING REACTION
+                    ========================
+                    */
+                    else if (userReactionIndex !== -1)
+                    {
+                        message.reactions[userReactionIndex].emoji =
+                            emoji;
+                    }
+
+                    /*
+                    ========================
+                    ADD NEW REACTION
+                    ========================
+                    */
+                    else
+                    {
+                        message.reactions.push({
+                            userId,
+                            emoji
+                        });
+                    }
+
+                    await message.save();
+
+
+                    const reactionPayload = {
+                        messageId,
+                        conversationId,
+                        reactions: message.reactions
+                    };
+
+                    /*
+========================
+SEND REACTION UPDATE
+To conversation room + both users
+========================
+*/
+                    io.to(
+                        conversationId.toString()
+                    ).emit(
+                        "message_reaction_updated",
+                        reactionPayload
+                    );
+
+                    io.to(
+                        message.senderId.toString()
+                    ).emit(
+                        "message_reaction_updated",
+                        reactionPayload
+                    );
+
+                    io.to(
+                        message.receiverId.toString()
+                    ).emit(
+                        "message_reaction_updated",
+                        reactionPayload
+                    );
+                }
+                catch (error)
+                {
+                    console.log(
+                        "MESSAGE REACTION ERROR:",
+                        error.message
+                    );
+                }
+            }
         );
 
 

@@ -143,6 +143,44 @@ export const useChatStore = create((set) => ({
       };
     }),
 
+
+  updateMessageReactions: (
+    convId,
+    messageId,
+    reactions = []
+  ) =>
+    set((s) =>
+    {
+      if (!convId || !messageId) return {};
+
+      const convKey =
+        Object.keys(s.messagesByConv).find(
+          (key) =>
+            key.toString() ===
+            convId.toString()
+        );
+
+      if (!convKey) return {};
+
+      return {
+        messagesByConv: {
+          ...s.messagesByConv,
+          [convKey]: (
+            s.messagesByConv[convKey] || []
+          ).map((m) =>
+            getId(m)?.toString() ===
+              messageId?.toString()
+              ? {
+                ...m,
+                reactions,
+              }
+              : m
+          ),
+        },
+      };
+    }),
+
+
   setTyping: (convId, userId, isTyping) =>
     set((s) =>
     {

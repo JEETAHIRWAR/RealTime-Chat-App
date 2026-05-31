@@ -1,7 +1,4 @@
-
 const mongoose = require("mongoose");
-
-
 
 /*
 ========================================
@@ -10,132 +7,157 @@ MESSAGE SCHEMA
 Stores chat messages between users
 ========================================
 */
-const messageSchema = new mongoose.Schema({
+const messageSchema = new mongoose.Schema(
+    {
+        /*
+        ========================================
+        CONVERSATION ID
+        ========================================
+        Used for:
+        - chat history
+        - pagination
+        - realtime rooms
+        - scalable conversations
+        ========================================
+        */
+        conversationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Conversation",
+            required: true,
+            index: true
+        },
 
-    /*
-    ========================================
-    CONVERSATION ID
-    ========================================
-    Used for:
-    - chat history
-    - pagination
-    - realtime rooms
-    - scalable conversations
-    ========================================
-    */
-    conversationId: {
-        type: mongoose.Schema.Types.ObjectId,
+        /*
+        ========================================
+        SENDER
+        ========================================
+        */
+        senderId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
 
-        ref: "Conversation",
+        /*
+        ========================================
+        RECEIVER
+        ========================================
+        */
+        receiverId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
 
-        required: true,
+        /*
+        ========================================
+        ENCRYPTED MESSAGE
+        ========================================
+        */
+        message: {
+            type: String,
+            required: true,
+            trim: true
+        },
 
-        index: true
-    },
+        /*
+        ========================================
+        MESSAGE TYPE
+        text
+        image
+        file
+        ========================================
+        */
+        messageType: {
+            type: String,
+            enum: [
+                "text",
+                "image",
+                "file"
+            ],
+            default: "text"
+        },
 
+        /*
+        ========================================
+        FILE / IMAGE DATA
+        ========================================
+        */
+        fileUrl: {
+            type: String,
+            default: ""
+        },
 
+        fileName: {
+            type: String,
+            default: ""
+        },
 
+        fileSize: {
+            type: Number,
+            default: 0
+        },
 
-    /*
-    ========================================
-    SENDER
-    ========================================
-    */
-    senderId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
-    },
+        mimeType: {
+            type: String,
+            default: ""
+        },
 
+        /*
+        ========================================
+        MESSAGE REACTIONS
+        One user can react to one message.
+        Example:
+        [
+          {
+            userId: "...",
+            emoji: "❤️"
+          }
+        ]
+        ========================================
+        */
+        reactions: [
+            {
+                userId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User",
+                    required: true
+                },
 
+                emoji: {
+                    type: String,
+                    required: true
+                },
 
-
-    /*
-    ========================================
-    RECEIVER
-    ========================================
-    */
-    receiverId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
-    },
-
-
-
-
-    /*
-    ========================================
-    ENCRYPTED MESSAGE
-    ========================================
-    */
-    message: {
-        type: String,
-        required: true,
-        trim: true
-    },
-
-    /*
-    ========================================
-    Upload content MESSAGE
-    ========================================
-    */
-
-    messageType: {
-        type: String,
-        enum: ["text", "image", "file"],
-        default: "text"
-    },
-
-    fileUrl: {
-        type: String,
-        default: ""
-    },
-
-    fileName: {
-        type: String,
-        default: ""
-    },
-
-    fileSize: {
-        type: Number,
-        default: 0
-    },
-
-    mimeType: {
-        type: String,
-        default: ""
-    },
-
-    /*
-    ========================================
-    MESSAGE STATUS
-    ========================================
-    sent
-    delivered
-    seen
-    ========================================
-    */
-    status: {
-
-        type: String,
-
-        enum: [
-            "sent",
-            "delivered",
-            "seen"
+                createdAt: {
+                    type: Date,
+                    default: Date.now
+                }
+            }
         ],
 
-        default: "sent"
-    }
-
-},
+        /*
+        ========================================
+        MESSAGE STATUS
+        sent
+        delivered
+        seen
+        ========================================
+        */
+        status: {
+            type: String,
+            enum: [
+                "sent",
+                "delivered",
+                "seen"
+            ],
+            default: "sent"
+        }
+    },
     {
         timestamps: true
-    });
-
-
-
+    }
+);
 
 /*
 ========================================
@@ -152,9 +174,18 @@ messageSchema.index({
     createdAt: -1
 });
 
-
-
-
+/*
+========================================
+REACTION INDEX
+========================================
+Optimized for:
+- finding reactions by user
+- preventing duplicate reaction logic
+========================================
+*/
+messageSchema.index({
+    "reactions.userId": 1
+});
 
 /*
 ========================================
