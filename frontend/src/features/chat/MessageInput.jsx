@@ -313,7 +313,7 @@ export default function MessageInput({
 
       <form
         onSubmit={submit}
-        className="sticky bottom-0 z-20 flex shrink-0 items-end gap-2 border-t border-[var(--color-border)] bg-[var(--color-card)] p-2.5 pb-[max(10px,env(safe-area-inset-bottom))] md:p-3"
+        className="relative z-30 flex shrink-0 items-end gap-2 border-t border-[var(--color-border)] bg-[var(--color-card)] p-2.5 pb-[max(10px,env(safe-area-inset-bottom))] md:p-3"
       >
         <div ref={emojiRef} className="relative">
           {showEmoji && (

@@ -34,10 +34,13 @@
 html,
 body,
 #root {
+  width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
+  overscroll-behavior: none;
   background: var(--color-bg);
   color: var(--color-fg);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -48,16 +51,6 @@ body {
   border-color: var(--color-border);
 }
 
-
-/* Google Login Responsive */
-/* div[role="button"] {
-  width: 100% !important;
-}
-
-iframe[title="Sign in with Google Button"] {
-  width: 100% !important;
-  max-width: 100% !important;
-} */
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {

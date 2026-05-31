@@ -12,7 +12,7 @@ export default function ChatPage()
   const [sidebarHidden, setSidebarHidden] = useState(false);
 
   return (
-    <div className="relative flex h-[100dvh] max-h-[100dvh] w-screen overflow-hidden bg-[var(--color-bg)]">
+    <div className="fixed inset-0 flex h-[100dvh] max-h-[100dvh] w-screen overflow-hidden bg-[var(--color-bg)]">
       {!sidebarHidden && (
         <div
           className={`${
