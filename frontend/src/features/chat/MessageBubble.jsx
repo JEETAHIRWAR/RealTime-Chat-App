@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import {
+import
+{
   Check,
   CheckCheck,
   Clock,
@@ -38,7 +39,10 @@ function formatFileSize(size = 0)
 export default function MessageBubble({ message, isMe })
 {
   const [showReactions, setShowReactions] = useState(false);
+
   const longPressTimer = useRef(null);
+  const longPressTargetRef = useRef(null);
+  const [reactionPosition, setReactionPosition] = useState("top");
 
   const text = message.message || message.content || "";
 
@@ -58,8 +62,20 @@ export default function MessageBubble({ message, isMe })
     ? message.reactions
     : [];
 
-  const openReactionBar = () =>
+  const openReactionBar = (e) =>
   {
+    const rect =
+      e?.currentTarget?.getBoundingClientRect?.();
+
+    if (rect && rect.top < 90)
+    {
+      setReactionPosition("bottom");
+    }
+    else
+    {
+      setReactionPosition("top");
+    }
+
     setShowReactions(true);
   };
 
@@ -83,7 +99,10 @@ export default function MessageBubble({ message, isMe })
   {
     longPressTimer.current = setTimeout(() =>
     {
-      openReactionBar();
+      openReactionBar({
+        currentTarget:
+          longPressTargetRef.current,
+      });
     }, 450);
   };
 
@@ -122,9 +141,8 @@ export default function MessageBubble({ message, isMe })
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18 }}
-      className={`flex w-full ${
-        isMe ? "justify-end" : "justify-start"
-      }`}
+      className={`flex w-full ${isMe ? "justify-end" : "justify-start"
+        }`}
       onClick={() =>
       {
         if (showReactions) closeReactionBar();
@@ -135,9 +153,11 @@ export default function MessageBubble({ message, isMe })
           <motion.div
             initial={{ opacity: 0, scale: 0.85, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className={`absolute -top-14 z-50 flex items-center gap-1 rounded-full bg-[#202c33] px-2 py-1.5 shadow-2xl ${
-              isMe ? "right-0" : "left-0"
-            }`}
+            className={`absolute z-50 flex items-center gap-1 rounded-full bg-[#202c33] px-2 py-1.5 shadow-2xl ${reactionPosition === "top"
+              ? "-top-14"
+              : "top-full mt-2"
+              } ${isMe ? "right-0" : "left-0"
+              }`}
           >
             {reactionEmojis.map((emoji) => (
               <button
@@ -168,20 +188,20 @@ export default function MessageBubble({ message, isMe })
         )}
 
         <div
-          onDoubleClick={openReactionBar}
+          ref={longPressTargetRef}
+          onDoubleClick={(e) => openReactionBar(e)}
           onContextMenu={(e) =>
           {
             e.preventDefault();
-            openReactionBar();
+            openReactionBar(e);
           }}
           onTouchStart={startLongPress}
           onTouchEnd={cancelLongPress}
           onTouchMove={cancelLongPress}
-          className={`rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
-            isMe
-              ? "rounded-br-md bg-[var(--color-bubble-me)] text-[var(--color-primary-fg)]"
-              : "rounded-bl-md bg-[var(--color-bubble-them)] text-[var(--color-fg)]"
-          }`}
+          className={`rounded-2xl px-3.5 py-2 text-sm shadow-sm ${isMe
+            ? "rounded-br-md bg-[var(--color-bubble-me)] text-[var(--color-primary-fg)]"
+            : "rounded-bl-md bg-[var(--color-bubble-them)] text-[var(--color-fg)]"
+            }`}
         >
           {isImage && safeFileUrl && (
             <a
@@ -209,9 +229,8 @@ export default function MessageBubble({ message, isMe })
               target="_blank"
               rel="noreferrer"
               download
-              className={`mb-2 flex items-center gap-3 rounded-xl p-3 ${
-                isMe ? "bg-white/10" : "bg-[var(--color-muted)]"
-              }`}
+              className={`mb-2 flex items-center gap-3 rounded-xl p-3 ${isMe ? "bg-white/10" : "bg-[var(--color-muted)]"
+                }`}
             >
               <FileText size={24} />
 
@@ -221,11 +240,10 @@ export default function MessageBubble({ message, isMe })
                 </div>
 
                 <div
-                  className={`text-xs ${
-                    isMe
-                      ? "text-white/70"
-                      : "text-[var(--color-muted-fg)]"
-                  }`}
+                  className={`text-xs ${isMe
+                    ? "text-white/70"
+                    : "text-[var(--color-muted-fg)]"
+                    }`}
                 >
                   {formatFileSize(message.fileSize)}
                 </div>
@@ -243,11 +261,10 @@ export default function MessageBubble({ message, isMe })
 
           {!isImage && (
             <div
-              className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
-                isMe
-                  ? "text-white/75"
-                  : "text-[var(--color-muted-fg)]"
-              }`}
+              className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${isMe
+                ? "text-white/75"
+                : "text-[var(--color-muted-fg)]"
+                }`}
             >
               <span>{formatTime(message.createdAt)}</span>
               {renderStatus()}
@@ -257,9 +274,8 @@ export default function MessageBubble({ message, isMe })
 
         {reactions.length > 0 && (
           <div
-            className={`relative -mt-1 flex ${
-              isMe ? "justify-end pr-2" : "justify-start pl-2"
-            }`}
+            className={`relative -mt-1 flex ${isMe ? "justify-end pr-2" : "justify-start pl-2"
+              }`}
           >
             <button
               type="button"
