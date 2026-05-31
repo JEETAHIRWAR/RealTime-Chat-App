@@ -85,7 +85,11 @@ export default function ChatWindow({ conversationId })
   // Auto-scroll on new messages
   useEffect(() =>
   {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scroller = scrollerRef.current;
+
+    if (!scroller) return;
+
+    scroller.scrollTop = scroller.scrollHeight;
   }, [messages.length, isTyping]);
 
   /*

@@ -158,10 +158,17 @@ export default function MessageInput({
 
     emitTypingStop({ conversationId });
 
-    if (!/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
+    // if (!/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
+    // {
+    //   taRef.current?.focus();
+    // }
+
+    emitTypingStop({ conversationId });
+
+    setTimeout(() =>
     {
       taRef.current?.focus();
-    }
+    }, 50);
   };
 
   const handleFileChange = (e) =>
@@ -223,17 +230,14 @@ export default function MessageInput({
     e.preventDefault();
     e.stopPropagation();
 
+    taRef.current?.blur();
+
     if (document.activeElement)
     {
       document.activeElement.blur();
     }
 
-    taRef.current?.blur();
-
-    setTimeout(() =>
-    {
-      setShowEmoji((prev) => !prev);
-    }, 0);
+    setShowEmoji((prev) => !prev);
   };
 
   return (
