@@ -36,9 +36,17 @@ function formatFileSize(size = 0)
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function MessageBubble({ message, isMe })
+export default function MessageBubble({
+  message,
+  isMe,
+  activeReactionMessage,
+  setActiveReactionMessage, })
 {
-  const [showReactions, setShowReactions] = useState(false);
+  const messageId =
+    message._id || message.id || message.tempId;
+
+  const showReactions =
+    activeReactionMessage === messageId;
 
   const longPressTimer = useRef(null);
   const longPressTargetRef = useRef(null);
@@ -76,12 +84,12 @@ export default function MessageBubble({ message, isMe })
       setReactionPosition("top");
     }
 
-    setShowReactions(true);
+    setActiveReactionMessage(messageId);
   };
 
   const closeReactionBar = () =>
   {
-    setShowReactions(false);
+    setActiveReactionMessage(null);
   };
 
   const handleReaction = (emoji) =>
@@ -153,7 +161,7 @@ export default function MessageBubble({ message, isMe })
           <motion.div
             initial={{ opacity: 0, scale: 0.85, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className={`absolute z-50 flex items-center gap-1 rounded-full bg-[#202c33] px-2 py-1.5 shadow-2xl ${reactionPosition === "top"
+            className={`absolute z-50 flex w-fit items-center gap-2 rounded-full bg-[#202c33] px-3 py-2 shadow-2xl ${reactionPosition === "top"
               ? "-top-14"
               : "top-full mt-2"
               } ${isMe ? "right-0" : "left-0"

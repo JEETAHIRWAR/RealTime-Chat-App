@@ -55,7 +55,10 @@ export default function ChatWindow({ conversationId })
     useState(false);
 
   const [hasMore, setHasMore] =
-    useState(true);
+  useState(true);
+
+  const [activeReactionMessage, setActiveReactionMessage] =
+  useState(null);
 
   const scrollerRef =
     useRef(null);
@@ -552,6 +555,8 @@ export default function ChatWindow({ conversationId })
                   }
                   message={m}
                   isMe={isMe}
+                  activeReactionMessage={activeReactionMessage}
+                  setActiveReactionMessage={setActiveReactionMessage}
                 />
               );
             })}
