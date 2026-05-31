@@ -92,6 +92,19 @@ export default function ChatWindow({ conversationId })
     scroller.scrollTop = scroller.scrollHeight;
   }, [messages.length, isTyping]);
 
+  useEffect(() =>
+  {
+    const scroller = scrollerRef.current;
+
+    if (!scroller) return;
+
+    requestAnimationFrame(() =>
+    {
+      scroller.scrollTop =
+        scroller.scrollHeight;
+    });
+  }, [conversationId, messages.length]);
+
   /*
   ========================================
   MARK MESSAGES AS SEEN
