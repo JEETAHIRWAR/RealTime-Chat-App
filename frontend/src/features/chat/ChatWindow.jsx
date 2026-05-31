@@ -1,47 +1,158 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, MessageSquare } from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  ArrowLeft,
+  MessageSquare,
+} from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
+
 import Avatar from "@/components/ui/Avatar";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import TypingIndicator from "./TypingIndicator";
+
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
+
 import { chatApi } from "@/api/chat";
-import
-{
+
+import {
   emitSendMessage,
   emitMarkConversationRead,
   emitMessageSeen,
-  joinConversation
+  joinConversation,
 } from "@/socket/socket";
 
 export default function ChatWindow({ conversationId })
 {
   const navigate = useNavigate();
-  const user = useAuthStore((s) => s.user);
-  const { conversations, messagesByConv, setMessages, prependMessages, appendMessage, typingByConv, onlineUsers } =
-    useChatStore();
-  const messages = messagesByConv[conversationId] || [];
-  const [loading, setLoading] = useState(false);
-  const [loadingOlder, setLoadingOlder] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const scrollerRef = useRef(null);
-  const bottomRef = useRef(null);
 
-  const conversation = useMemo(
-    () => conversations.find((c) => (c.id || c._id) === conversationId),
-    [conversations, conversationId]
-  );
+  const user =
+    useAuthStore((s) => s.user);
 
+  const {
+    conversations,
+    messagesByConv,
+    setMessages,
+    prependMessages,
+    typingByConv,
+    onlineUsers,
+  } = useChatStore();
+
+  const messages =
+    messagesByConv[conversationId] || [];
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [loadingOlder, setLoadingOlder] =
+    useState(false);
+
+  const [hasMore, setHasMore] =
+    useState(true);
+
+  const scrollerRef =
+    useRef(null);
+
+  /*
+  ========================================
+  USED TO PREVENT AUTO-SCROLL TO BOTTOM
+  WHILE LOADING OLDER MESSAGES
+  ========================================
+  */
+  const isLoadingOlderRef =
+    useRef(false);
+
+  /*
+  ========================================
+  SCROLL TO BOTTOM
+  Only scrolls messages container,
+  not the full browser page.
+  ========================================
+  */
+  const scrollToBottom = (
+    behavior = "auto",
+    delay = 0
+  ) =>
+  {
+    const run = () =>
+    {
+      const scroller =
+        scrollerRef.current;
+
+      if (!scroller) return;
+
+      requestAnimationFrame(() =>
+      {
+        scroller.scrollTo({
+          top: scroller.scrollHeight,
+          behavior,
+        });
+      });
+    };
+
+    if (delay)
+    {
+      setTimeout(run, delay);
+    }
+    else
+    {
+      run();
+    }
+  };
+
+  /*
+  ========================================
+  ACTIVE CONVERSATION
+  ========================================
+  */
+  const conversation =
+    useMemo(
+      () =>
+        conversations.find(
+          (c) =>
+            (c.id || c._id)?.toString() ===
+            conversationId?.toString()
+        ),
+      [conversations, conversationId]
+    );
+
+  /*
+  ========================================
+  OTHER USER
+  ========================================
+  */
   const other =
     conversation?.otherUser ||
-    conversation?.participants?.find((p) => (p.id || p._id) !== (user?.id || user?._id)) ||
+    conversation?.participants?.find(
+      (p) =>
+        (p.id || p._id)?.toString() !==
+        (user?.id || user?._id)?.toString()
+    ) ||
     {};
-  const otherId = other.id || other._id;
-  const isOnline = otherId ? onlineUsers.has(otherId) : false;
-  const isTyping = (typingByConv[conversationId] || new Set()).size > 0;
 
+  const otherId =
+    other.id || other._id;
+
+  const isOnline =
+    otherId
+      ? onlineUsers.has(otherId.toString())
+      : false;
+
+  const isTyping =
+    (typingByConv[conversationId] || new Set()).size > 0;
+
+  /*
+  ========================================
+  JOIN CONVERSATION ROOM
+  ========================================
+  */
   useEffect(() =>
   {
     if (!conversationId) return;
@@ -49,67 +160,115 @@ export default function ChatWindow({ conversationId })
     joinConversation(conversationId);
   }, [conversationId]);
 
-  // Load initial messages
+  /*
+  ========================================
+  LOAD INITIAL MESSAGES
+  Runs whenever conversation changes.
+  ========================================
+  */
   useEffect(() =>
   {
     if (!conversationId) return;
+
     let cancelled = false;
+
     setLoading(true);
     setHasMore(true);
+
     chatApi
       .getMessages(conversationId, 1, 30)
       .then((res) =>
       {
         if (cancelled) return;
-        const msgs = res.messages || res || [];
-        setMessages(conversationId, msgs);
-        setHasMore(msgs.length >= 30);
+
+        const msgs =
+          res.messages || res || [];
+
+        setMessages(
+          conversationId,
+          msgs
+        );
+
+        setHasMore(
+          res.hasMore ??
+          msgs.length >= 30
+        );
       })
-      .catch(() => { })
-      .finally(() => !cancelled && setLoading(false));
+      .catch((error) =>
+      {
+        console.log(
+          "LOAD MESSAGES ERROR:",
+          error?.response?.data ||
+          error.message
+        );
+      })
+      .finally(() =>
+      {
+        if (!cancelled)
+        {
+          setLoading(false);
+        }
+      });
+
     return () =>
     {
       cancelled = true;
     };
   }, [conversationId, setMessages]);
 
+  /*
+  ========================================
+  AUTO-SCROLL TO BOTTOM
+  Works after messages are loaded/rendered.
+  Also works when switching:
+  UserA -> UserB -> UserA
+  ========================================
+  */
+  useEffect(() =>
+  {
+    if (!conversationId) return;
+    if (loading) return;
+    if (!messages.length) return;
+    if (isLoadingOlderRef.current) return;
+
+    scrollToBottom("auto", 80);
+    scrollToBottom("auto", 250);
+  }, [
+    conversationId,
+    loading,
+    messages.length,
+  ]);
+
+  /*
+  ========================================
+  SCROLL WHEN TYPING INDICATOR APPEARS
+  ========================================
+  */
+  useEffect(() =>
+  {
+    if (!isTyping) return;
+    if (isLoadingOlderRef.current) return;
+
+    scrollToBottom("smooth");
+  }, [isTyping]);
+
+  /*
+  ========================================
+  MARK CONVERSATION AS READ
+  ========================================
+  */
   useEffect(() =>
   {
     if (!conversationId) return;
 
     emitMarkConversationRead({
-      conversationId
-    });
-  }, [conversationId, messages.length]);
-
-  // Auto-scroll on new messages
-  useEffect(() =>
-  {
-    const scroller = scrollerRef.current;
-
-    if (!scroller) return;
-
-    scroller.scrollTop = scroller.scrollHeight;
-  }, [messages.length, isTyping]);
-
-  useEffect(() =>
-  {
-    const scroller = scrollerRef.current;
-
-    if (!scroller) return;
-
-    requestAnimationFrame(() =>
-    {
-      scroller.scrollTop =
-        scroller.scrollHeight;
+      conversationId,
     });
   }, [conversationId, messages.length]);
 
   /*
   ========================================
-  MARK MESSAGES AS SEEN
-  ========================================
-  Only active/open conversation messages
+  MARK RECEIVED MESSAGES AS SEEN
   ========================================
   */
   useEffect(() =>
@@ -131,13 +290,15 @@ export default function ChatWindow({ conversationId })
       }
 
       const senderId =
-        m.senderId?._id || m.senderId;
+        m.senderId?._id ||
+        m.senderId;
 
       const currentUserId =
         user?._id || user?.id;
 
       if (
-        senderId?.toString() !== currentUserId?.toString() &&
+        senderId?.toString() !==
+          currentUserId?.toString() &&
         m.status !== "seen"
       )
       {
@@ -150,96 +311,153 @@ export default function ChatWindow({ conversationId })
     });
   }, [conversationId, messages, user]);
 
-  // Infinite scroll: load older when scrolled to top
+  /*
+  ========================================
+  LOAD OLDER MESSAGES ON SCROLL TOP
+  ========================================
+  */
   const onScroll = async (e) =>
   {
     if (loadingOlder || !hasMore) return;
-    if (e.currentTarget.scrollTop < 80 && messages.length)
-    {
-      setLoadingOlder(true);
-      const oldest = messages[0];
-      try
-      {
-        const nextPage = Math.floor(messages.length / 30) + 1;
+    if (!conversationId) return;
+    if (!messages.length) return;
 
-        const res = await chatApi.getMessages(
+    const scroller =
+      e.currentTarget;
+
+    if (scroller.scrollTop >= 80) return;
+
+    try
+    {
+      isLoadingOlderRef.current = true;
+
+      setLoadingOlder(true);
+
+      const prevHeight =
+        scroller.scrollHeight;
+
+      const nextPage =
+        Math.floor(messages.length / 30) + 1;
+
+      const res =
+        await chatApi.getMessages(
           conversationId,
           nextPage,
           30
         );
-        const older = res.messages || res || [];
-        const prevHeight = e.currentTarget.scrollHeight;
-        prependMessages(conversationId, older);
-        if (older.length < 30) setHasMore(false);
-        requestAnimationFrame(() =>
-        {
-          if (scrollerRef.current)
-          {
-            scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight - prevHeight;
-          }
-        });
-      } catch { }
+
+      const older =
+        res.messages || res || [];
+
+      prependMessages(
+        conversationId,
+        older
+      );
+
+      if (
+        older.length < 30 ||
+        res.hasMore === false
+      )
+      {
+        setHasMore(false);
+      }
+
+      requestAnimationFrame(() =>
+      {
+        const currentScroller =
+          scrollerRef.current;
+
+        if (!currentScroller) return;
+
+        currentScroller.scrollTop =
+          currentScroller.scrollHeight -
+          prevHeight;
+      });
+
+      setTimeout(() =>
+      {
+        isLoadingOlderRef.current = false;
+      }, 100);
+    }
+    catch (error)
+    {
+      console.log(
+        "LOAD OLDER ERROR:",
+        error?.response?.data ||
+        error.message
+      );
+
+      isLoadingOlderRef.current = false;
+    }
+    finally
+    {
       setLoadingOlder(false);
     }
   };
 
+  /*
+  ========================================
+  SEND TEXT MESSAGE
+  ========================================
+  */
   const handleSend = (content) =>
   {
-    const tempId = `tmp_${Date.now()}_${Math.random()
-      .toString(36)
-      .slice(2)}`;
-
-    const optimistic = {
-      tempId,
-      message: content,
-      content,
-      senderId: user?._id || user?.id,
-      conversationId,
-      createdAt: new Date().toISOString(),
-      status: "pending",
-    };
-
-    // appendMessage(conversationId, optimistic);
-
     emitSendMessage({
       conversationId,
       receiverId: otherId,
       message: content,
-      tempId,
     });
   };
 
-
-  const handleFileSend = async (file, caption = "") =>
+  /*
+  ========================================
+  SEND FILE / IMAGE
+  ========================================
+  */
+  const handleFileSend = async (
+    file,
+    caption = ""
+  ) =>
   {
     try
     {
-      const uploadRes = await chatApi.uploadFile(file);
+      const uploadRes =
+        await chatApi.uploadFile(file);
 
-      const uploadedFile = uploadRes.file;
+      const uploadedFile =
+        uploadRes.file;
 
       emitSendMessage({
         conversationId,
         receiverId: otherId,
-        message: caption || uploadedFile.fileName,
-        messageType: uploadedFile.mimeType.startsWith("image/")
-          ? "image"
-          : "file",
+        message:
+          caption ||
+          uploadedFile.fileName,
+        messageType:
+          uploadedFile.mimeType.startsWith("image/")
+            ? "image"
+            : "file",
         fileUrl: uploadedFile.fileUrl,
         fileName: uploadedFile.fileName,
         fileSize: uploadedFile.fileSize,
         mimeType: uploadedFile.mimeType,
       });
-    } catch (error)
+    }
+    catch (error)
     {
       console.log(
-        "File send error:",
-        error.response?.data || error.message
+        "FILE SEND ERROR:",
+        error?.response?.data ||
+        error.message
       );
     }
   };
 
-
+  /*
+  ========================================
+  EMPTY STATE
+  ========================================
+  */
   if (!conversationId)
   {
     return (
@@ -264,7 +482,7 @@ export default function ChatWindow({ conversationId })
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-bg)]">
       {/* Header */}
-      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-card)] px-3 py-3 md:px-5">
+      <div className="flex shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-card)] px-3 py-3 md:px-5">
         <button
           type="button"
           onClick={() => navigate("/chat")}
@@ -286,7 +504,11 @@ export default function ChatWindow({ conversationId })
           </div>
 
           <div className="truncate text-xs text-[var(--color-muted-fg)]">
-            {isTyping ? "typing..." : isOnline ? "online" : "offline"}
+            {isTyping
+              ? "typing..."
+              : isOnline
+                ? "online"
+                : "offline"}
           </div>
         </div>
       </div>
@@ -323,7 +545,11 @@ export default function ChatWindow({ conversationId })
 
               return (
                 <MessageBubble
-                  key={m.id || m._id || m.tempId}
+                  key={
+                    m.id ||
+                    m._id ||
+                    m.tempId
+                  }
                   message={m}
                   isMe={isMe}
                 />
@@ -337,8 +563,6 @@ export default function ChatWindow({ conversationId })
                 </div>
               </div>
             )}
-
-            <div ref={bottomRef} />
           </div>
         )}
       </div>
