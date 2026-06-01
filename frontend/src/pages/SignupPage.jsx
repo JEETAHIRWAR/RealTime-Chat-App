@@ -7,55 +7,80 @@ import Input from "@/components/ui/Input";
 import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
 import Spinner from "@/components/ui/Spinner";
 import { authApi } from "@/api/auth";
-import { useAuthStore } from "@/store/authStore";
 
-export default function SignupPage() {
+export default function SignupPage()
+{
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  // No direct login after register.
+  // User must verify email OTP first.
 
-  const submit = async (e) => {
+  const submit = async (e) =>
+  {
     e.preventDefault();
     setLoading(true);
-    try {
-      const res = await authApi.register({ name, email, phone, password });
-      if (res?.token) {
-        setAuth({ token: res.token, user: res.user });
-        toast.success("Account created!");
-        navigate("/chat");
-      } else if (res?.otpSent) {
-        toast.success("OTP sent to verify your account");
-        navigate("/verify-otp", { state: { channel: "email", identifier: email } });
-      } else {
-        toast.success("Account created — please log in");
-        navigate("/login");
-      }
-    } catch (err) {
+
+    try
+    {
+      const res = await authApi.register({
+        name,
+        email,
+        phone,
+        password,
+      });
+
+      toast.success(
+        res?.message || "OTP sent to verify your account"
+      );
+
+      navigate("/verify-otp", {
+        state: {
+          channel: "email",
+          identifier: email,
+          mode: "register",
+        },
+      });
+    } catch (err)
+    {
       toast.error(err?.response?.data?.message || "Signup failed");
-    } finally {
+    } finally
+    {
       setLoading(false);
     }
   };
 
-  const otpSignup = async (channel) => {
+  const otpSignup = async (channel) =>
+  {
     setLoading(true);
-    try {
-      if (channel === "email") {
+    try
+    {
+      if (channel === "email")
+      {
         if (!email) return toast.error("Enter your email");
         await authApi.requestEmailOtp(email);
-        navigate("/verify-otp", { state: { channel: "email", identifier: email, name } });
-      } else {
+        navigate("/verify-otp", {
+          state: {
+            channel: "email",
+            identifier: email,
+            name,
+            mode: "email_otp",
+          },
+        });
+      } else
+      {
         if (!phone) return toast.error("Enter your mobile number");
         await authApi.requestPhoneOtp(phone);
         navigate("/verify-otp", { state: { channel: "phone", identifier: phone, name } });
       }
-    } catch (err) {
+    } catch (err)
+    {
       toast.error(err?.response?.data?.message || "Failed to send OTP");
-    } finally {
+    } finally
+    {
       setLoading(false);
     }
   };

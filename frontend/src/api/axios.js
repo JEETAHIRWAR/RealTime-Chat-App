@@ -18,16 +18,71 @@ api.interceptors.request.use((config) =>
 
 api.interceptors.response.use(
   (res) => res,
-  (err) =>
+
+  async (err) =>
   {
-    if (err?.response?.status === 401)
+    const originalRequest = err.config;
+
+    if (
+      err?.response?.status === 401 &&
+      !originalRequest?._retry
+    )
     {
-      useAuthStore.getState().logout();
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login"))
+      originalRequest._retry = true;
+
+      try
       {
-        window.location.assign("/login");
+        const refreshToken =
+          useAuthStore.getState().refreshToken ||
+          localStorage.getItem("refresh_token");
+
+        if (!refreshToken)
+        {
+          throw new Error("Refresh token missing");
+        }
+
+        const res = await axios.post(
+          `${baseURL}/api/auth/refresh-token`,
+          {
+            refreshToken,
+          }
+        );
+
+        const newAccessToken =
+          res?.data?.accessToken;
+
+        if (!newAccessToken)
+        {
+          throw new Error("New access token missing");
+        }
+
+        useAuthStore.getState().setAuth({
+          token: newAccessToken,
+          user: useAuthStore.getState().user,
+          refreshToken,
+        });
+
+        originalRequest.headers.Authorization =
+          `Bearer ${newAccessToken}`;
+
+        return api(originalRequest);
+      }
+      catch (refreshError)
+      {
+        useAuthStore.getState().logout();
+
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/login")
+        )
+        {
+          window.location.assign("/login");
+        }
+
+        return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(err);
   }
 );

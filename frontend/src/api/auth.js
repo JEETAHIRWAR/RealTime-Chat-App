@@ -8,7 +8,14 @@ export const authApi = {
 
   // Email OTP
   requestEmailOtp: (email) => api.post("/api/auth/send-email-otp", { email }).then((r) => r.data),
-  verifyEmailOtp: (email, otp) => api.post("/api/auth/verify-email-otp", { email, otp }).then((r) => r.data),
+  verifyEmailOtp: (email, otp) =>
+    api.post(
+      "/api/auth/verify-email-otp",
+      {
+        email,
+        otp,
+      }
+    ).then((r) => r.data),
 
   // Mobile OTP
   requestPhoneOtp: (phone) => api.post("/api/auth/send-phone-otp", { phone }).then((r) => r.data),

@@ -46,15 +46,18 @@ export default function LoginPage()
       }
 
       // ✅ store correctly
-      setAuth({ token, user });
+      setAuth({
+        token,
+        refreshToken: res.refreshToken,
+        user,
+      });
 
       toast.success("Welcome back!");
 
       // ✅ IMPORTANT: ensure state update before navigation
-      setTimeout(() =>
-      {
-        navigate("/chat", { replace: true });
-      }, 100);
+      navigate("/chat", {
+        replace: true,
+      });
 
     } catch (err)
     {
@@ -91,12 +94,25 @@ export default function LoginPage()
       {
         if (!email) return toast.error("Enter your email");
         await authApi.requestEmailOtp(email);
-        navigate("/verify-otp", { state: { channel: "email", identifier: email } });
+
+        navigate("/verify-otp", {
+          state: {
+            channel: "email",
+            identifier: email,
+            mode: "email_otp",
+          },
+        });
       } else
       {
         if (!phone) return toast.error("Enter your mobile number");
         await authApi.requestPhoneOtp(phone);
-        navigate("/verify-otp", { state: { channel: "phone", identifier: phone } });
+        navigate("/verify-otp", {
+          state: {
+            channel: "phone",
+            identifier: phone,
+            mode: "phone_otp",
+          },
+        });
       }
     } catch (err)
     {

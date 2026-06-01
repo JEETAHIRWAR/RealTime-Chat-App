@@ -65,6 +65,7 @@ export default function GoogleLoginButton()
 
             setAuth({
               token,
+              refreshToken: res.refreshToken,
               user: res.user,
             });
 

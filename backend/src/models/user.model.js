@@ -116,7 +116,8 @@ const userSchema = new mongoose.Schema({
         enum: [
             "local",
             "google",
-            "phone"
+            "email_otp",
+            "phone_otp"
         ],
         default: "local"
     },

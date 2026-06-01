@@ -48,16 +48,35 @@ exports.register = async (req, res) =>
         const user = await User.create({
             name,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            isVerified: false
         });
 
-        // RESPONSE
+        /*
+        ========================================
+        SEND OTP
+        ========================================
+        */
+        const otp = await createOTP({
+            email,
+            purpose: "email_verification"
+        });
+
+        /*
+        ========================================
+        RESPONSE
+        ========================================
+        */
         res.status(201).json({
             success: true,
-            message: "User registered successfully",
-            user
-        });
+            message: "OTP sent successfully. Verify your email.",
+            email,
 
+            /*
+            REMOVE IN PRODUCTION
+            */
+            otp
+        });
     } catch (error)
     {
 
@@ -320,19 +339,71 @@ exports.verifyEmailOTP = async (req, res) =>
 
         /*
         ========================================
-        UPDATE USER VERIFICATION
+        FIND OR CREATE USER
+        ========================================
+        For:
+        - register OTP verification
+        - email OTP login
+        - email OTP signup
         ========================================
         */
-        await User.findOneAndUpdate(
+        let user =
+            await User.findOne({
+                email
+            });
 
-            { email },
+        if (!user)
+        {
+            const emailName =
+                email.split("@")[0];
 
+            user =
+                await User.create({
+                    name: emailName,
+                    email,
+                    password: "",
+                    authProvider: "email_otp",
+                    isVerified: true
+                });
+        }
+        else
+        {
+            user.isVerified = true;
+
+            if (!user.authProvider)
             {
-                isVerified: true
+                user.authProvider = "email_otp";
             }
 
-        );
+            await user.save();
+        }
 
+
+        /*
+        ========================================
+        GENERATE TOKENS
+        ========================================
+        */
+        const accessToken =
+            generateAccessToken(user._id);
+
+        const refreshToken =
+            generateRefreshToken(user._id);
+
+
+
+        /*
+        ========================================
+        SAVE REFRESH TOKEN
+        ========================================
+        */
+        user.refreshToken =
+            await bcrypt.hash(
+                refreshToken,
+                10
+            );
+
+        await user.save();
 
 
 
@@ -344,7 +415,15 @@ exports.verifyEmailOTP = async (req, res) =>
         res.status(200).json({
 
             success: true,
-            message: "Email verified successfully"
+
+            message:
+                "Email verified successfully",
+
+            accessToken,
+
+            refreshToken,
+
+            user
 
         });
 

@@ -8,7 +8,8 @@ import OTPInput from "@/components/auth/OTPInput";
 import { authApi } from "@/api/auth";
 import { useAuthStore } from "@/store/authStore";
 
-export default function OTPVerifyPage() {
+export default function OTPVerifyPage()
+{
   const { state } = useLocation();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -16,7 +17,8 @@ export default function OTPVerifyPage() {
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(30);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     if (cooldown <= 0) return;
     const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
     return () => clearTimeout(t);
@@ -24,33 +26,67 @@ export default function OTPVerifyPage() {
 
   if (!state?.identifier) return <Navigate to="/login" replace />;
 
-  const { channel, identifier } = state;
+  const {
+    channel,
+    identifier,
+    mode,
+  } = state;
 
-  const verify = async () => {
+  const verify = async () =>
+  {
     if (otp.length < 6) return toast.error("Enter the 6-digit code");
+
     setLoading(true);
-    try {
+
+    try
+    {
       const res =
         channel === "email"
           ? await authApi.verifyEmailOtp(identifier, otp)
           : await authApi.verifyPhoneOtp(identifier, otp);
-      setAuth({ token: res.token, user: res.user });
-      toast.success("Verified!");
-      navigate("/chat");
-    } catch (err) {
+      const token =
+        res?.accessToken || res?.token;
+
+      if (!token)
+      {
+        toast.error("Verification failed: token missing");
+        return;
+      }
+
+      setAuth({
+        token,
+        refreshToken: res.refreshToken,
+        user: res.user,
+      });
+
+      toast.success(
+        mode === "register"
+          ? "Account verified successfully!"
+          : "Verified!"
+      );
+
+      navigate("/chat", {
+        replace: true,
+      });
+    } catch (err)
+    {
       toast.error(err?.response?.data?.message || "Invalid code");
-    } finally {
+    } finally
+    {
       setLoading(false);
     }
   };
 
-  const resend = async () => {
-    try {
+  const resend = async () =>
+  {
+    try
+    {
       if (channel === "email") await authApi.requestEmailOtp(identifier);
       else await authApi.requestPhoneOtp(identifier);
       setCooldown(30);
       toast.success("Code resent");
-    } catch (err) {
+    } catch (err)
+    {
       toast.error(err?.response?.data?.message || "Failed to resend");
     }
   };
