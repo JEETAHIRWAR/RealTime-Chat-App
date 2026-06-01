@@ -128,8 +128,30 @@ const userSchema = new mongoose.Schema({
     ========================================
     ACCOUNT VERIFICATION
     ========================================
+    Overall account verification
+    ========================================
     */
     isVerified: {
+        type: Boolean,
+        default: false
+    },
+
+    /*
+    ========================================
+    EMAIL VERIFICATION
+    ========================================
+    */
+    emailVerified: {
+        type: Boolean,
+        default: false
+    },
+
+    /*
+    ========================================
+    PHONE VERIFICATION
+    ========================================
+    */
+    phoneVerified: {
         type: Boolean,
         default: false
     },
