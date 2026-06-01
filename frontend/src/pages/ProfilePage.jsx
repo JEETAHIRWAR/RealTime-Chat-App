@@ -535,7 +535,7 @@ export default function ProfilePage()
                   {user?.phone}
                 </div>
               ) : (
-                <>
+                <div div className="grid gap-2">
                   <div className="grid gap-2 md:grid-cols-[1fr_auto]">
                     <Input
                       type="tel"
@@ -586,7 +586,7 @@ export default function ProfilePage()
                       </Button>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
           </div>
