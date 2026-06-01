@@ -62,7 +62,7 @@ const otpSchema = new mongoose.Schema({
         enum: [
             "email_verification",
             "phone_verification",
-            "password_reset"
+            "forgot_password"
         ],
         required: true
     },

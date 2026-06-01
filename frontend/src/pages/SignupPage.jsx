@@ -101,7 +101,7 @@ export default function SignupPage()
       <form onSubmit={submit} className="space-y-3">
         <Input placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} required />
         <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Input type="tel" placeholder="Mobile (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <Input type="tel" placeholder="Mobile " value={phone} onChange={(e) => setPhone(e.target.value)} />
         <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <Button type="submit" disabled={loading} className="w-full">
           {loading ? <Spinner /> : "Create account"}

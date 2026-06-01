@@ -25,6 +25,8 @@ import { chatApi } from "@/api/chat";
 import { useDebounce } from "@/hooks/useDebounce";
 
 import { toast } from "sonner";
+import { authApi } from "@/api/auth";
+import { disconnectSocket } from "@/socket/socket";
 
 function formatTime(ts)
 {
@@ -52,7 +54,11 @@ export default function Sidebar({ onHideSidebar })
   const navigate = useNavigate();
   const { conversationId } = useParams();
 
-  const { user, logout } = useAuthStore();
+  const {
+    user,
+    refreshToken,
+    logout,
+  } = useAuthStore();
 
   const conversations = useChatStore(
     (s) => s.conversations || []
@@ -200,6 +206,31 @@ export default function Sidebar({ onHideSidebar })
       console.error(error);
 
       toast.error("Could not start conversation");
+    }
+  };
+
+  const handleLogout = async () =>
+  {
+    try
+    {
+      await authApi.logout(refreshToken);
+    }
+    catch (error)
+    {
+      console.log(
+        "Logout API error:",
+        error?.response?.data || error.message
+      );
+    }
+    finally
+    {
+      disconnectSocket();
+
+      logout();
+
+      navigate("/login", {
+        replace: true,
+      });
     }
   };
 
@@ -468,6 +499,7 @@ export default function Sidebar({ onHideSidebar })
 
         <button
           type="button"
+          onClick={() => navigate("/profile")}
           className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--color-muted)]"
           title="Settings"
         >
@@ -475,11 +507,7 @@ export default function Sidebar({ onHideSidebar })
         </button>
 
         <button
-          onClick={() =>
-          {
-            logout();
-            navigate("/login");
-          }}
+          onClick={handleLogout}
           className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--color-muted)]"
           title="Log out"
         >

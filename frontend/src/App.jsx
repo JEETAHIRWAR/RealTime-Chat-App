@@ -9,27 +9,37 @@ import ProtectedRoute from "@/routes/ProtectedRoute";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import OTPVerifyPage from "@/pages/OTPVerifyPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import ProfilePage from "@/pages/ProfilePage";
 import ChatPage from "@/pages/ChatPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 
-export default function App() {
+
+export default function App()
+{
   const { token, hydrate, user, ready } = useAuthStore();
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     hydrate();
   }, [hydrate]);
 
-  useEffect(() => {
-    if (ready && token && user) {
+  useEffect(() =>
+  {
+    if (ready && token && user)
+    {
       connectSocket(token);
 
-      return () => {
+      return () =>
+      {
         disconnectSocket();
       };
     }
   }, [ready, token, user]);
 
-  if (!ready) {
+  if (!ready)
+  {
     return null;
   }
 
@@ -51,6 +61,15 @@ export default function App() {
       <Route path="/signup" element={<SignupPage />} />
 
       <Route path="/verify-otp" element={<OTPVerifyPage />} />
+      <Route
+        path="/forgot-password"
+        element={<ForgotPasswordPage />}
+      />
+
+      <Route
+        path="/reset-password"
+        element={<ResetPasswordPage />}
+      />
 
       <Route
         path="/chat"
@@ -60,6 +79,17 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+
+
 
       <Route
         path="/chat/:conversationId"

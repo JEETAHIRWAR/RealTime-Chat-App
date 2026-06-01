@@ -446,6 +446,122 @@ exports.verifyEmailOTP = async (req, res) =>
 
 /*
 ========================================
+SEND FORGOT PASSWORD OTP
+========================================
+*/
+exports.sendForgotPasswordOTP = async (
+    req,
+    res
+) =>
+{
+    try
+    {
+        const { email } = req.body;
+
+        const user =
+            await User.findOne({
+                email
+            });
+
+        if (!user)
+        {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const otp =
+            await createOTP({
+                email,
+                purpose: "forgot_password"
+            });
+
+        console.log(
+            "FORGOT PASSWORD OTP:",
+            otp
+        );
+
+        res.status(200).json({
+            success: true,
+            message:
+                "OTP sent successfully"
+        });
+    }
+    catch (error)
+    {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+/*
+========================================
+RESET PASSWORD
+========================================
+*/
+exports.resetPassword = async (
+    req,
+    res
+) =>
+{
+    try
+    {
+        const {
+            email,
+            otp,
+            password
+        } = req.body;
+
+        const result =
+            await verifyOTP({
+                email,
+                otp,
+                purpose:
+                    "forgot_password"
+            });
+
+        if (!result.success)
+        {
+            return res.status(400).json(
+                result
+            );
+        }
+
+        const hashedPassword =
+            await bcrypt.hash(
+                password,
+                10
+            );
+
+        await User.findOneAndUpdate(
+            { email },
+            {
+                password:
+                    hashedPassword
+            }
+        );
+
+        res.status(200).json({
+            success: true,
+            message:
+                "Password updated successfully"
+        });
+    }
+    catch (error)
+    {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+/*
+========================================
 REFRESH ACCESS TOKEN
 ========================================
 */
@@ -701,6 +817,52 @@ exports.googleLogin = async (req, res) =>
             success: false,
             message: "Google login failed",
             error: error.message
+        });
+    }
+};
+
+/*
+========================================
+LOGOUT
+========================================
+*/
+exports.logout = async (
+    req,
+    res
+) =>
+{
+    try
+    {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken)
+        {
+            return res.status(200).json({
+                success: true
+            });
+        }
+
+        const decoded = jwt.verify(
+            refreshToken,
+            process.env.JWT_REFRESH_SECRET
+        );
+
+        await User.findByIdAndUpdate(
+            decoded.id,
+            {
+                refreshToken: null
+            }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Logged out successfully"
+        });
+    }
+    catch (error)
+    {
+        res.status(200).json({
+            success: true
         });
     }
 };

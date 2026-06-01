@@ -46,3 +46,82 @@ exports.searchUsers = async (req, res) =>
         });
     }
 };
+
+
+/*
+========================================
+GET PROFILE
+========================================
+*/
+exports.getProfile = async (req, res) =>
+{
+    try
+    {
+        const user = await User.findById(
+            req.user.id
+        ).select(
+            "-password -refreshToken"
+        );
+
+        res.status(200).json({
+            success: true,
+            user,
+        });
+    }
+    catch (error)
+    {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+
+
+/*
+========================================
+UPDATE PROFILE
+========================================
+*/
+exports.updateProfile = async (
+    req,
+    res
+) =>
+{
+    try
+    {
+        const {
+            name,
+            bio,
+            avatar
+        } = req.body;
+
+        const user =
+            await User.findByIdAndUpdate(
+                req.user.id,
+                {
+                    name,
+                    bio,
+                    avatar,
+                },
+                {
+                    new: true,
+                }
+            ).select(
+                "-password -refreshToken"
+            );
+
+        res.status(200).json({
+            success: true,
+            user,
+        });
+    }
+    catch (error)
+    {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};

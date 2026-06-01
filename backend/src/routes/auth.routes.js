@@ -9,8 +9,13 @@ const {
     sendEmailOTP,
     verifyEmailOTP,
     refreshAccessToken,
-    googleLogin
+    googleLogin,
+    logout,
+
+    sendForgotPasswordOTP,
+    resetPassword
 } = require("../controllers/auth.controller");
+
 const { protect } = require("../middleware/auth.middleware");
 
 
@@ -53,12 +58,37 @@ router.post(
 
 /*
 ========================================
+FORGOT PASSWORD
+========================================
+*/
+router.post(
+    "/forgot-password",
+    sendForgotPasswordOTP
+);
+
+router.post(
+    "/reset-password",
+    resetPassword
+);
+
+/*
+========================================
 GOOGLE LOGIN
 ========================================
 */
 router.post(
     "/google-login",
     googleLogin
+);
+
+/*
+========================================
+LOGOUT
+========================================
+*/
+router.post(
+    "/logout",
+    logout
 );
 
 module.exports = router;

@@ -158,8 +158,16 @@ export default function LoginPage()
 
       {tab === "password" && (
         <form onSubmit={submitPassword} className="space-y-3">
-          <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <div className="flex justify-end">
+            <Link
+              to="/forgot-password"
+              className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          </div>
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? <Spinner /> : "Sign in"}
           </Button>
@@ -168,7 +176,7 @@ export default function LoginPage()
 
       {tab === "email" && (
         <div className="space-y-3">
-          <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
           <Button onClick={() => requestOtp("email")} disabled={loading} className="w-full">
             {loading ? <Spinner /> : "Send OTP"}
           </Button>
@@ -177,7 +185,7 @@ export default function LoginPage()
 
       {tab === "phone" && (
         <div className="space-y-3">
-          <Input type="tel" placeholder="+1 555 000 0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Input type="tel" placeholder="+91 555 000 0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
           <Button onClick={() => requestOtp("phone")} disabled={loading} className="w-full">
             {loading ? <Spinner /> : "Send OTP"}
           </Button>
