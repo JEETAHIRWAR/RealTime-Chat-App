@@ -167,12 +167,43 @@ const messageSchema = new mongoose.Schema(
                 "seen"
             ],
             default: "sent"
-        }
+        },
+
+
+        /*
+        ========================================
+        DELETE MESSAGE
+        ========================================
+        */
+        isDeleted: {
+            type: Boolean,
+            default: false
+        },
+
+        deletedAt: {
+            type: Date,
+            default: null
+        },
+
+        deletedForEveryone: {
+            type: Boolean,
+            default: false
+        },
+
+        deletedFor: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User"
+            }
+        ]
     },
     {
         timestamps: true
     }
 );
+
+
+
 
 /*
 ========================================

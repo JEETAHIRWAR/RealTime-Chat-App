@@ -242,4 +242,64 @@ export const useChatStore = create((set) => ({
         onlineUsers: new Set(ids.map(String)),
       };
     }),
+
+
+  deleteMessage: (
+    messageId,
+    deleteForEveryone
+  ) =>
+    set((s) =>
+    {
+      if (!messageId)
+      {
+        return {};
+      }
+
+      const updatedMessagesByConv = {};
+
+      Object.keys(
+        s.messagesByConv
+      ).forEach((convId) =>
+      {
+        updatedMessagesByConv[convId] =
+          (
+            s.messagesByConv[
+            convId
+            ] || []
+          ).filter((msg) =>
+          {
+            if (
+              getId(msg)?.toString() ===
+              messageId?.toString()
+            )
+            {
+              /*
+              ========================
+              DELETE FOR EVERYONE
+              ========================
+              */
+              if (
+                deleteForEveryone
+              )
+              {
+                return false;
+              }
+
+              /*
+              ========================
+              DELETE FOR ME
+              ========================
+              */
+              return false;
+            }
+
+            return true;
+          });
+      });
+
+      return {
+        messagesByConv:
+          updatedMessagesByConv,
+      };
+    }),
 }));

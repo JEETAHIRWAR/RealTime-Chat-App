@@ -695,11 +695,11 @@ Adds / updates / removes reaction
                     };
 
                     /*
-========================
-SEND REACTION UPDATE
-To conversation room + both users
-========================
-*/
+                    ========================
+                    SEND REACTION UPDATE
+                    To conversation room + both users
+                    ========================
+                    */
                     io.to(
                         conversationId.toString()
                     ).emit(
@@ -731,6 +731,129 @@ To conversation room + both users
             }
         );
 
+
+        /*
+        ====================================
+        DELETE MESSAGE
+        ====================================
+        */
+        socket.on(
+
+            "delete_message",
+
+            async (payload = {}) =>
+            {
+
+                try
+                {
+
+                    const {
+                        messageId,
+                        deleteForEveryone = false
+                    } = payload;
+
+                    if (!messageId)
+                    {
+                        return;
+                    }
+
+                    const message =
+                        await Message.findById(
+                            messageId
+                        );
+
+                    if (!message)
+                    {
+                        return;
+                    }
+
+                    /*
+                    ==========================
+                    DELETE FOR EVERYONE
+                    ==========================
+                    */
+                    if (
+                        deleteForEveryone &&
+                        String(message.senderId) ===
+                        String(userId)
+                    )
+                    {
+
+                        message.isDeleted = true;
+
+                        message.deletedForEveryone = true;
+
+                        message.deletedAt =
+                            new Date();
+
+                        await message.save();
+
+                        io.to(
+                            message.conversationId.toString()
+                        ).emit(
+                            "message_deleted",
+                            {
+                                messageId,
+                                conversationId:
+                                    message.conversationId,
+                                deleteForEveryone: true
+                            }
+                        );
+
+                        return;
+
+                    }
+
+                    /*
+                    ==========================
+                    DELETE FOR ME
+                    ==========================
+                    */
+                    const alreadyDeleted =
+                        message.deletedFor.some(
+                            (id) =>
+                                String(id) ===
+                                String(userId)
+                        );
+
+                    if (!alreadyDeleted)
+                    {
+
+                        message.deletedFor.push(
+                            userId
+                        );
+
+                        await message.save();
+
+                    }
+
+                    io.to(
+                        userId.toString()
+                    ).emit(
+                        "message_deleted",
+                        {
+                            messageId,
+                            conversationId:
+                                message.conversationId,
+                            deleteForEveryone: false
+                        }
+                    );
+
+                }
+
+                catch (error)
+                {
+
+                    console.log(
+                        "DELETE MESSAGE ERROR:",
+                        error.message
+                    );
+
+                }
+
+            }
+
+        );
 
         /*
         ====================================

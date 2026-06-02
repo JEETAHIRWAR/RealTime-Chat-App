@@ -458,6 +458,30 @@ export function connectSocket(token)
 
   );
 
+  /*
+  ========================================
+  MESSAGE DELETED
+  ========================================
+  */
+  socket.on(
+
+    "message_deleted",
+
+    (data = {}) =>
+    {
+
+      chat.deleteMessage(
+
+        data.messageId,
+
+        data.deleteForEveryone
+
+      );
+
+    }
+
+  );
+
 
   /*
   ========================================
@@ -481,6 +505,8 @@ export function connectSocket(token)
       );
     }
   );
+
+
 
   /*
   ========================================
@@ -814,6 +840,25 @@ export function emitMarkConversationRead(
   {
     socket.emit(
       "mark_conversation_read",
+      payload
+    );
+  }
+}
+
+
+/*
+========================================
+DELETE MESSAGE
+========================================
+*/
+export function emitDeleteMessage(
+  payload = {}
+)
+{
+  if (socket?.connected)
+  {
+    socket.emit(
+      "delete_message",
       payload
     );
   }

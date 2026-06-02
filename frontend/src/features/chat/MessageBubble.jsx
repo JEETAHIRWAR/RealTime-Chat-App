@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import
 {
@@ -7,11 +7,19 @@ import
   Clock,
   FileText,
   Download,
-  Plus,
-  Reply
+  Reply,
+  Trash2,
+  Copy,
+  Forward,
+  ChevronDown,
 } from "lucide-react";
 
-import { emitMessageReaction } from "@/socket/socket";
+import
+{
+  emitMessageReaction,
+  emitDeleteMessage,
+} from "@/socket/socket";
+
 import { useChatStore } from "@/store/chatStore";
 
 const reactionEmojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
@@ -42,19 +50,25 @@ export default function MessageBubble({
   message,
   isMe,
   activeReactionMessage,
-  setActiveReactionMessage, })
+  setActiveReactionMessage,
+})
 {
-  const messageId =
-    message._id || message.id || message.tempId;
+  const messageId = message._id || message.id || message.tempId;
 
-  const showReactions =
-    activeReactionMessage === messageId;
+  const showReactions = activeReactionMessage === messageId;
 
   const longPressTimer = useRef(null);
   const longPressTargetRef = useRef(null);
-  const [reactionStyle, setReactionStyle] = useState({});
-  const setReplyMessage =
-    useChatStore((s) => s.setReplyMessage);
+  const popupRef = useRef(null);
+
+  const [reactionStyle, setReactionStyle] = useState({
+    top: 0,
+    left: 0,
+  });
+
+  const [showMenu, setShowMenu] = useState(false);
+
+  const setReplyMessage = useChatStore((s) => s.setReplyMessage);
 
   const text = message.message || message.content || "";
 
@@ -74,40 +88,73 @@ export default function MessageBubble({
     ? message.reactions
     : [];
 
-
-  const repliedMessage =
-    message.replyTo || null;
+  const repliedMessage = message.replyTo || null;
 
   const repliedText =
     repliedMessage?.message ||
     repliedMessage?.fileName ||
-    (repliedMessage?.messageType === "image"
-      ? "Photo"
-      : "");
+    (repliedMessage?.messageType === "image" ? "Photo" : "");
 
-  const openReactionBar = (e) =>
+  useEffect(() =>
   {
+    const handleOutsideClick = (e) =>
+    {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(e.target)
+      )
+      {
+        setShowMenu(false);
+        setActiveReactionMessage(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+
+    return () =>
+    {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [setActiveReactionMessage]);
+
+  const openActionPopup = (e) =>
+  {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+
+    /*
+    ========================================
+    TOGGLE POPUP
+    ========================================
+    */
+    if (activeReactionMessage === messageId && showMenu)
+    {
+      closePopup();
+      return;
+    }
+
     const rect =
       e?.currentTarget?.getBoundingClientRect?.();
 
     if (!rect)
     {
       setActiveReactionMessage(messageId);
+      setShowMenu(true);
       return;
     }
 
-    const isNearTop =
-      rect.top < 120;
+    const top = Math.max(12, rect.top - 62);
 
-    const top =
-      isNearTop
-        ? rect.bottom + 8
-        : rect.top - 58;
+    let left = isMe
+      ? rect.right - 330
+      : rect.left;
 
-    const left =
-      isMe
-        ? Math.max(12, rect.right - 420)
-        : Math.max(12, rect.left);
+    left = Math.max(
+      12,
+      Math.min(left, window.innerWidth - 340)
+    );
 
     setReactionStyle({
       top,
@@ -115,10 +162,12 @@ export default function MessageBubble({
     });
 
     setActiveReactionMessage(messageId);
+    setShowMenu(true);
   };
 
-  const closeReactionBar = () =>
+  const closePopup = () =>
   {
+    setShowMenu(false);
     setActiveReactionMessage(null);
   };
 
@@ -130,16 +179,53 @@ export default function MessageBubble({
       emoji,
     });
 
-    closeReactionBar();
+    closePopup();
+  };
+
+  const handleReply = () =>
+  {
+    setReplyMessage(message);
+    closePopup();
+  };
+
+  const handleDeleteForMe = () =>
+  {
+    emitDeleteMessage({
+      messageId: message._id || message.id,
+      deleteForEveryone: false,
+    });
+
+    closePopup();
+  };
+
+  const handleDeleteForEveryone = () =>
+  {
+    emitDeleteMessage({
+      messageId: message._id || message.id,
+      deleteForEveryone: true,
+    });
+
+    closePopup();
+  };
+
+  const handleCopy = async () =>
+  {
+    try
+    {
+      await navigator.clipboard.writeText(text);
+      closePopup();
+    } catch
+    {
+      closePopup();
+    }
   };
 
   const startLongPress = () =>
   {
     longPressTimer.current = setTimeout(() =>
     {
-      openReactionBar({
-        currentTarget:
-          longPressTargetRef.current,
+      openActionPopup({
+        currentTarget: longPressTargetRef.current,
       });
     }, 450);
   };
@@ -181,59 +267,153 @@ export default function MessageBubble({
       transition={{ duration: 0.18 }}
       className={`flex w-full ${isMe ? "justify-end" : "justify-start"
         }`}
-      onClick={() =>
-      {
-        if (showReactions) closeReactionBar();
-      }}
     >
-      <div className="relative max-w-[78%]">
+      <div className="group relative max-w-[78%]">
         {showReactions && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            style={reactionStyle}
-            className="fixed z-[9999] flex w-fit items-center gap-2 rounded-full bg-[#202c33] px-3 py-2 shadow-2xl"
+          <div
+            ref={popupRef}
+            style={{
+              top: reactionStyle.top,
+              left: reactionStyle.left,
+            }}
+            className="fixed z-[9999] flex flex-col items-start"
           >
-            {reactionEmojis.map((emoji) => (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="mb-2 flex w-fit items-center gap-2 rounded-full bg-[#202c33] px-3 py-2 shadow-2xl"
+            >
+              {reactionEmojis.map((emoji) =>
+              {
+                const selected = reactions.some(
+                  (r) => r.emoji === emoji
+                );
+
+                return (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={(e) =>
+                    {
+                      e.stopPropagation();
+                      handleReaction(emoji);
+                    }}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-2xl transition hover:scale-125 active:scale-110 ${selected
+                      ? "bg-green-600 ring-2 ring-green-400"
+                      : ""
+                      }`}
+                  >
+                    {emoji}
+                  </button>
+                );
+              })}
+
               <button
-                key={emoji}
                 type="button"
+                className="ml-1 flex h-10 w-10 items-center justify-center rounded-full bg-[#2a3942] text-white"
                 onClick={(e) =>
                 {
                   e.stopPropagation();
-                  handleReaction(emoji);
+                  handleReply();
                 }}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-2xl transition hover:scale-125 active:scale-110"
+                title="Reply"
               >
-                {emoji}
+                <Reply size={18} />
               </button>
-            ))}
+            </motion.div>
 
-            <button
-              type="button"
-              className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-[#2a3942] text-white"
-              onClick={(e) =>
-              {
-                e.stopPropagation();
+            {showMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-60 overflow-hidden rounded-2xl border border-white/10 bg-[#202c33] py-2 text-sm text-white shadow-2xl"
+              >
+                <button
+                  type="button"
+                  onClick={handleReply}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#2a3942]"
+                >
+                  <Reply size={18} />
+                  Reply
+                </button>
 
-                setReplyMessage(message);
+                {text && (
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#2a3942]"
+                  >
+                    <Copy size={18} />
+                    Copy
+                  </button>
+                )}
 
-                closeReactionBar();
-              }}
-              title="Reply"
-            >
-              <Reply size={18} />
-            </button>
-          </motion.div>
+                <button
+                  type="button"
+                  onClick={closePopup}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#2a3942]"
+                >
+                  <Forward size={18} />
+                  Forward
+                </button>
+
+                <div className="my-1 border-t border-white/10" />
+
+                <button
+                  type="button"
+                  onClick={handleDeleteForMe}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#2a3942]"
+                >
+                  <Trash2 size={18} />
+                  Delete for me
+                </button>
+
+                {isMe && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteForEveryone}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-red-400 hover:bg-[#2a3942]"
+                  >
+                    <Trash2 size={18} />
+                    Delete for everyone
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </div>
         )}
+
+        <button
+          type="button"
+          onClick={(e) =>
+          {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (
+              activeReactionMessage === messageId &&
+              showMenu
+            )
+            {
+              closePopup();
+              return;
+            }
+
+            openActionPopup(e);
+          }}
+          className={`absolute top-0 z-20 hidden h-6 w-6 items-center justify-center rounded-full shadow group-hover:flex ${isMe ? "-right-1" : "-left-1"
+            }`}
+        >
+          <ChevronDown size={16} />
+        </button>
 
         <div
           ref={longPressTargetRef}
-          onDoubleClick={(e) => openReactionBar(e)}
+          onDoubleClick={openActionPopup}
           onContextMenu={(e) =>
           {
             e.preventDefault();
-            openReactionBar(e);
+            openActionPopup(e);
           }}
           onTouchStart={startLongPress}
           onTouchEnd={cancelLongPress}
@@ -269,6 +449,7 @@ export default function MessageBubble({
               </div>
             </div>
           )}
+
           {isImage && safeFileUrl && (
             <a
               href={safeFileUrl}
@@ -345,7 +526,7 @@ export default function MessageBubble({
           >
             <button
               type="button"
-              onClick={openReactionBar}
+              onClick={openActionPopup}
               className="flex items-center gap-1 rounded-full border border-black/10 bg-[#202c33] px-2 py-0.5 text-xs shadow-md"
             >
               {reactions.slice(0, 3).map((reaction, index) => (
