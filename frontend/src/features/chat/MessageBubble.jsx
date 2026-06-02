@@ -8,9 +8,11 @@ import
   FileText,
   Download,
   Plus,
+  Reply
 } from "lucide-react";
 
 import { emitMessageReaction } from "@/socket/socket";
+import { useChatStore } from "@/store/chatStore";
 
 const reactionEmojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
@@ -51,6 +53,8 @@ export default function MessageBubble({
   const longPressTimer = useRef(null);
   const longPressTargetRef = useRef(null);
   const [reactionStyle, setReactionStyle] = useState({});
+  const setReplyMessage =
+    useChatStore((s) => s.setReplyMessage);
 
   const text = message.message || message.content || "";
 
@@ -69,6 +73,17 @@ export default function MessageBubble({
   const reactions = Array.isArray(message.reactions)
     ? message.reactions
     : [];
+
+
+  const repliedMessage =
+    message.replyTo || null;
+
+  const repliedText =
+    repliedMessage?.message ||
+    repliedMessage?.fileName ||
+    (repliedMessage?.messageType === "image"
+      ? "Photo"
+      : "");
 
   const openReactionBar = (e) =>
   {
@@ -200,9 +215,14 @@ export default function MessageBubble({
               onClick={(e) =>
               {
                 e.stopPropagation();
+
+                setReplyMessage(message);
+
+                closeReactionBar();
               }}
+              title="Reply"
             >
-              <Plus size={18} />
+              <Reply size={18} />
             </button>
           </motion.div>
         )}
@@ -223,6 +243,32 @@ export default function MessageBubble({
             : "rounded-bl-md bg-[var(--color-bubble-them)] text-[var(--color-fg)]"
             }`}
         >
+          {repliedMessage && (
+            <div
+              className={`mb-2 rounded-xl border-l-4 px-3 py-2 text-xs ${isMe
+                ? "border-white/70 bg-white/10"
+                : "border-[var(--color-primary)] bg-[var(--color-muted)]"
+                }`}
+            >
+              <div
+                className={`mb-0.5 font-semibold ${isMe
+                  ? "text-white/90"
+                  : "text-[var(--color-primary)]"
+                  }`}
+              >
+                Replying to
+              </div>
+
+              <div
+                className={`line-clamp-2 break-words ${isMe
+                  ? "text-white/75"
+                  : "text-[var(--color-muted-fg)]"
+                  }`}
+              >
+                {repliedText || "Message"}
+              </div>
+            </div>
+          )}
           {isImage && safeFileUrl && (
             <a
               href={safeFileUrl}

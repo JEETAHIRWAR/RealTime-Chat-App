@@ -8,6 +8,10 @@ const {
     getMe,
     sendEmailOTP,
     verifyEmailOTP,
+
+    sendPhoneOTP,
+    verifyPhoneOTP,
+
     refreshAccessToken,
     googleLogin,
     logout,
@@ -49,6 +53,21 @@ router.post(
 router.post(
     "/verify-email-otp",
     verifyEmailOTP
+);
+
+/*
+========================================
+PHONE OTP ROUTES
+========================================
+*/
+router.post(
+    "/send-phone-otp",
+    sendPhoneOTP
+);
+
+router.post(
+    "/verify-phone-otp",
+    verifyPhoneOTP
 );
 
 router.post(

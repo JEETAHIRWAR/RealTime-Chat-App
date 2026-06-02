@@ -363,12 +363,14 @@ exports.verifyEmailOTP = async (req, res) =>
                     email,
                     password: "",
                     authProvider: "email_otp",
-                    isVerified: true
+                    isVerified: true,
+                    emailVerified: true
                 });
         }
         else
         {
             user.isVerified = true;
+            user.emailVerified = true;
 
             if (!user.authProvider)
             {
@@ -441,6 +443,174 @@ exports.verifyEmailOTP = async (req, res) =>
 
     }
 
+};
+
+
+/*
+========================================
+SEND PHONE OTP
+========================================
+Mobile OTP login/signup
+========================================
+*/
+exports.sendPhoneOTP = async (req, res) =>
+{
+    try
+    {
+        const { phone } = req.body;
+
+        if (!phone)
+        {
+            return res.status(400).json({
+                success: false,
+                message: "Phone number is required"
+            });
+        }
+
+        const otp = await createOTP({
+            phone,
+            purpose: "phone_verification"
+        });
+
+        console.log(
+            "PHONE LOGIN OTP:",
+            otp
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "OTP sent successfully",
+
+            /*
+            REMOVE IN PRODUCTION
+            */
+            otp
+        });
+    }
+    catch (error)
+    {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+
+/*
+========================================
+VERIFY PHONE OTP
+========================================
+If user exists -> login
+If user not exists -> create account
+========================================
+*/
+exports.verifyPhoneOTP = async (req, res) =>
+{
+    try
+    {
+        const {
+            phone,
+            otp
+        } = req.body;
+
+        if (!phone || !otp)
+        {
+            return res.status(400).json({
+                success: false,
+                message: "Phone and OTP are required"
+            });
+        }
+
+        const result = await verifyOTP({
+            phone,
+            otp,
+            purpose: "phone_verification"
+        });
+
+        if (!result.success)
+        {
+            return res.status(400).json(result);
+        }
+
+        /*
+        ========================================
+        FIND OR CREATE USER
+        ========================================
+        */
+        let user =
+            await User.findOne({
+                phone
+            });
+
+        if (!user)
+        {
+            const lastFour =
+                phone.slice(-4);
+
+            user =
+                await User.create({
+                    name: `User ${lastFour}`,
+                    phone,
+                    password: "",
+                    authProvider: "phone_otp",
+                    isVerified: true,
+                    phoneVerified: true
+                });
+        }
+        else
+        {
+            user.isVerified = true;
+            user.phoneVerified = true;
+
+            if (!user.authProvider)
+            {
+                user.authProvider = "phone_otp";
+            }
+
+            await user.save();
+        }
+
+        /*
+        ========================================
+        GENERATE TOKENS
+        ========================================
+        */
+        const accessToken =
+            generateAccessToken(user._id);
+
+        const refreshToken =
+            generateRefreshToken(user._id);
+
+        /*
+        ========================================
+        SAVE REFRESH TOKEN
+        ========================================
+        */
+        user.refreshToken =
+            await bcrypt.hash(
+                refreshToken,
+                10
+            );
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Phone verified successfully",
+            accessToken,
+            refreshToken,
+            user
+        });
+    }
+    catch (error)
+    {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
 };
 
 
@@ -766,7 +936,8 @@ exports.googleLogin = async (req, res) =>
                     googleId: sub,
                     avatar: picture || "",
                     authProvider: "google",
-                    isVerified: true
+                    isVerified: true,
+                    emailVerified: true
                 });
         }
         else
@@ -781,6 +952,7 @@ exports.googleLogin = async (req, res) =>
                 user.authProvider || "google";
 
             user.isVerified = true;
+            user.emailVerified = true;
 
             await user.save();
         }

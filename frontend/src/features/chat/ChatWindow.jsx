@@ -1,16 +1,16 @@
 import
-  {
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-  } from "react";
+{
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import
-  {
-    ArrowLeft,
-    MessageSquare,
-  } from "lucide-react";
+{
+  ArrowLeft,
+  MessageSquare,
+} from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -25,12 +25,12 @@ import { useChatStore } from "@/store/chatStore";
 import { chatApi } from "@/api/chat";
 
 import
-  {
-    emitSendMessage,
-    emitMarkConversationRead,
-    emitMessageSeen,
-    joinConversation,
-  } from "@/socket/socket";
+{
+  emitSendMessage,
+  emitMarkConversationRead,
+  emitMessageSeen,
+  joinConversation,
+} from "@/socket/socket";
 
 export default function ChatWindow({ conversationId })
 {
@@ -406,12 +406,19 @@ export default function ChatWindow({ conversationId })
   SEND TEXT MESSAGE
   ========================================
   */
-  const handleSend = (content) =>
+  const handleSend = (
+    content,
+    replyMessage = null
+  ) =>
   {
     emitSendMessage({
       conversationId,
       receiverId: otherId,
       message: content,
+      replyTo:
+        replyMessage?._id ||
+        replyMessage?.id ||
+        null,
     });
   };
 
@@ -422,7 +429,8 @@ export default function ChatWindow({ conversationId })
   */
   const handleFileSend = async (
     file,
-    caption = ""
+    caption = "",
+    replyMessage = null
   ) =>
   {
     try
@@ -447,6 +455,10 @@ export default function ChatWindow({ conversationId })
         fileName: uploadedFile.fileName,
         fileSize: uploadedFile.fileSize,
         mimeType: uploadedFile.mimeType,
+        replyTo:
+          replyMessage?._id ||
+          replyMessage?.id ||
+          null,
       });
     }
     catch (error)

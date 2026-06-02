@@ -101,6 +101,10 @@ exports.getMessages = async (req, res) =>
                 })
                 .skip(skip)
                 .limit(limit)
+                .populate({
+                    path: "replyTo",
+                    select: "message senderId messageType fileName fileUrl"
+                })
                 .lean();
 
         /*
@@ -113,10 +117,21 @@ exports.getMessages = async (req, res) =>
             {
                 return {
                     ...msg,
+
                     message:
                         safeDecrypt(
                             msg.message
-                        )
+                        ),
+
+                    replyTo: msg.replyTo
+                        ? {
+                            ...msg.replyTo,
+                            message:
+                                safeDecrypt(
+                                    msg.replyTo.message
+                                )
+                        }
+                        : null
                 };
             });
 

@@ -6,11 +6,12 @@ import
   Paperclip,
   X,
   FileText,
-  Image as ImageIcon,
+  Image as ImageIcon, XCircle,
 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 
 import Button from "@/components/ui/Button";
+import { useChatStore } from "@/store/chatStore";
 
 import
 {
@@ -43,6 +44,12 @@ export default function MessageInput({
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [caption, setCaption] = useState("");
+
+  const replyMessage =
+    useChatStore((s) => s.replyMessage);
+
+  const clearReplyMessage =
+    useChatStore((s) => s.clearReplyMessage);
 
   const typingRef = useRef(false);
   const timerRef = useRef(null);
@@ -150,7 +157,9 @@ export default function MessageInput({
 
     if (!value || disabled) return;
 
-    onSend(value);
+    onSend(value, replyMessage);
+
+    clearReplyMessage();
 
     setText("");
     setShowEmoji(false);
@@ -208,7 +217,13 @@ export default function MessageInput({
   {
     if (!selectedFile || disabled) return;
 
-    onFileSend?.(selectedFile, caption.trim());
+    onFileSend?.(
+      selectedFile,
+      caption.trim(),
+      replyMessage
+    );
+
+    clearReplyMessage();
 
     closePreview();
   };
@@ -311,67 +326,94 @@ export default function MessageInput({
         </div>
       )}
 
-      <form
-        onSubmit={submit}
-        className="relative z-30 flex shrink-0 items-end gap-2 border-t border-[var(--color-border)] bg-[var(--color-card)] p-2.5 pb-[max(10px,env(safe-area-inset-bottom))] md:p-3"
-      >
-        <div ref={emojiRef} className="relative">
-          {showEmoji && (
-            <div className="absolute bottom-14 left-0 z-50 max-w-[90vw]">
-              <EmojiPicker
-                theme="dark"
-                onEmojiClick={addEmoji}
-              />
+      <div className="relative z-30 shrink-0 border-t border-[var(--color-border)] bg-[var(--color-card)]">
+        {replyMessage && (
+          <div className="flex items-center gap-3 border-b border-[var(--color-border)] px-3 py-2">
+            <div className="min-w-0 flex-1 rounded-xl border-l-4 border-[var(--color-primary)] bg-[var(--color-muted)] px-3 py-2">
+              <div className="text-xs font-semibold text-[var(--color-primary)]">
+                Replying to
+              </div>
+
+              <div className="truncate text-xs text-[var(--color-muted-fg)]">
+                {replyMessage.message ||
+                  replyMessage.fileName ||
+                  "Message"}
+              </div>
             </div>
-          )}
+
+            <button
+              type="button"
+              onClick={clearReplyMessage}
+              className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--color-muted)]"
+            >
+              <XCircle size={18} />
+            </button>
+          </div>
+        )}
+
+
+        <form
+          onSubmit={submit}
+          className="flex items-end gap-2 p-2.5 pb-[max(10px,env(safe-area-inset-bottom))] md:p-3"
+        >
+          <div ref={emojiRef} className="relative">
+            {showEmoji && (
+              <div className="absolute bottom-14 left-0 z-50 max-w-[90vw]">
+                <EmojiPicker
+                  theme="dark"
+                  onEmojiClick={addEmoji}
+                />
+              </div>
+            )}
+
+            <button
+              type="button"
+              onPointerDown={toggleEmojiPicker}
+              className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
+              tabIndex={-1}
+            >
+              <Smile size={18} />
+            </button>
+          </div>
 
           <button
             type="button"
-            onPointerDown={toggleEmojiPicker}
-            className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
+            onClick={() => fileRef.current?.click()}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
             tabIndex={-1}
           >
-            <Smile size={18} />
+            <Paperclip size={18} />
           </button>
-        </div>
 
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
-          tabIndex={-1}
-        >
-          <Paperclip size={18} />
-        </button>
+          <input
+            ref={fileRef}
+            type="file"
+            hidden
+            onChange={handleFileChange}
+            accept="image/*,.pdf,.txt,.zip"
+          />
 
-        <input
-          ref={fileRef}
-          type="file"
-          hidden
-          onChange={handleFileChange}
-          accept="image/*,.pdf,.txt,.zip"
-        />
+          <textarea
+            ref={taRef}
+            rows={1}
+            value={text}
+            onChange={(e) => handleChange(e.target.value)}
+            onKeyDown={onKey}
+            placeholder="Type a message..."
+            disabled={disabled}
+            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+          />
 
-        <textarea
-          ref={taRef}
-          rows={1}
-          value={text}
-          onChange={(e) => handleChange(e.target.value)}
-          onKeyDown={onKey}
-          placeholder="Type a message..."
-          disabled={disabled}
-          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-        />
-
-        <Button
-          type="submit"
-          size="icon"
-          className="h-10 w-10 rounded-full"
-          disabled={!text.trim() || disabled}
-        >
-          <Send size={16} />
-        </Button>
-      </form>
+          <Button
+            type="submit"
+            size="icon"
+            className="h-10 w-10 rounded-full"
+            disabled={!text.trim() || disabled}
+          >
+            <Send size={16} />
+          </Button>
+        </form>
+      </div>
     </>
   );
 }

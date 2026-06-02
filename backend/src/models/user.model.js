@@ -38,6 +38,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         unique: true,
         sparse: true,
+        default: undefined,
         lowercase: true,
         trim: true
     },
@@ -52,7 +53,9 @@ const userSchema = new mongoose.Schema({
     phone: {
         type: String,
         unique: true,
-        sparse: true
+        sparse: true,
+        default: undefined,
+        trim: true
     },
 
 

@@ -103,6 +103,21 @@ const messageSchema = new mongoose.Schema(
             default: ""
         },
 
+
+        /*
+        ========================================
+        REPLY TO MESSAGE
+        ========================================
+        Stores original message reference
+        for WhatsApp-style reply feature
+        ========================================
+        */
+        replyTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Message",
+            default: null
+        },
+
         /*
         ========================================
         MESSAGE REACTIONS

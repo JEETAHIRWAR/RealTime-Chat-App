@@ -434,7 +434,10 @@ export function connectSocket(token)
 
     "message_seen",
 
-    ({ messageId } = {}) =>
+    ({
+      messageId,
+      status = "seen",
+    } = {}) =>
     {
 
       if (!messageId)
@@ -447,7 +450,7 @@ export function connectSocket(token)
 
         messageId,
 
-        "seen"
+        status
 
       );
 

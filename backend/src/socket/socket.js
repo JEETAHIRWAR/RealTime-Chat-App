@@ -238,7 +238,8 @@ const socketHandler = (io) =>
                         fileUrl = "",
                         fileName = "",
                         fileSize = 0,
-                        mimeType = ""
+                        mimeType = "",
+                        replyTo = null
                     } = payload;
 
                     if (!receiverId || !conversationId)
@@ -307,7 +308,9 @@ const socketHandler = (io) =>
 
                             fileSize,
 
-                            mimeType
+                            mimeType,
+
+                            replyTo
 
                         });
 
@@ -328,6 +331,31 @@ const socketHandler = (io) =>
 
                         await messageData.save();
                     }
+
+
+                    let replyMessage = null;
+
+                    if (replyTo)
+                    {
+                        const replied =
+                            await Message.findById(replyTo)
+                                .select("message senderId messageType fileName fileUrl");
+
+                        if (replied)
+                        {
+                            replyMessage = {
+                                _id: replied._id,
+                                senderId: replied.senderId,
+                                message: safeDecrypt(replied.message),
+                                messageType: replied.messageType,
+                                fileName: replied.fileName,
+                                fileUrl: replied.fileUrl
+                            };
+                        }
+                    }
+
+
+
 
                     /*
                     ========================
@@ -372,6 +400,8 @@ const socketHandler = (io) =>
                             messageData.status,
 
                         reactions: messageData.reactions || [],
+
+                        replyTo: replyMessage,
 
                         createdAt:
                             messageData.createdAt
@@ -520,16 +550,38 @@ const socketHandler = (io) =>
 
 
 
+                    const seenPayload = {
+                        messageId,
+                        conversationId,
+                        status: "seen"
+                    };
+
+                    /*
+                    ========================================
+                    NOTIFY SENDER
+                    ========================================
+                    Sender sees blue double tick realtime
+                    ========================================
+                    */
                     io.to(
                         senderId.toString()
                     ).emit(
-
                         "message_seen",
+                        seenPayload
+                    );
 
-                        {
-                            messageId
-                        }
-
+                    /*
+                    ========================================
+                    SYNC RECEIVER DEVICES
+                    ========================================
+                    If receiver has multiple tabs/devices
+                    ========================================
+                    */
+                    io.to(
+                        userId.toString()
+                    ).emit(
+                        "message_seen",
+                        seenPayload
                     );
 
                 }

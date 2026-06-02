@@ -9,12 +9,23 @@ export const useChatStore = create((set) => ({
   typingByConv: {},
   onlineUsers: new Set(),
   loadingConversations: false,
+  replyMessage: null,
 
   setConversations: (list = []) =>
     set({ conversations: Array.isArray(list) ? list : [] }),
 
   setLoadingConversations: (value) =>
     set({ loadingConversations: value }),
+
+  setReplyMessage: (message) =>
+    set({
+      replyMessage: message,
+    }),
+
+  clearReplyMessage: () =>
+    set({
+      replyMessage: null,
+    }),
 
   setActive: (id) =>
     set({ activeId: id }),
