@@ -293,15 +293,15 @@ export default function MessageBubble({
                   <button
                     key={emoji}
                     type="button"
-                    onClick={(e) => {
+                    onClick={(e) =>
+                    {
                       e.stopPropagation();
                       handleReaction(emoji);
                     }}
-                    className={`flex h-10 w-10 items-center justify-center rounded-full text-2xl transition hover:scale-125 active:scale-110 ${
-                      selected
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-2xl transition hover:scale-125 active:scale-110 ${selected
                         ? "bg-green-600 ring-2 ring-green-400"
                         : ""
-                    }`}
+                      }`}
                   >
                     {emoji}
                   </button>
@@ -499,10 +499,16 @@ export default function MessageBubble({
               <Download size={18} />
             </a>
           )}
-
+          
           {text && !isImage && (
             <div className="whitespace-pre-wrap break-words">
               {text}
+
+              {message.isEdited && (
+                <span className="ml-2 text-[10px] opacity-70">
+                  (edited)
+                </span>
+              )}
             </div>
           )}
 

@@ -195,7 +195,22 @@ const messageSchema = new mongoose.Schema(
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "User"
             }
-        ]
+        ],
+
+        /*
+        ========================================
+        EDIT MESSAGE
+        ========================================
+        */
+        isEdited: {
+            type: Boolean,
+            default: false
+        },
+
+        editedAt: {
+            type: Date,
+            default: null
+        }
     },
     {
         timestamps: true

@@ -18,9 +18,6 @@ const SOCKET_URL =
 let socket = null;
 
 
-
-
-
 /*
 ========================================
 GET SOCKET INSTANCE
@@ -30,10 +27,6 @@ export function getSocket()
 {
   return socket;
 }
-
-
-
-
 
 
 /*
@@ -60,9 +53,6 @@ export function connectSocket(token)
 
   }
 
-
-
-
   /*
   ========================================
   PREVENT MULTIPLE CONNECTIONS
@@ -72,9 +62,6 @@ export function connectSocket(token)
   {
     return socket;
   }
-
-
-
 
   /*
   ========================================
@@ -89,10 +76,6 @@ export function connectSocket(token)
     socket.disconnect();
 
   }
-
-
-
-
 
 
   /*
@@ -127,10 +110,6 @@ export function connectSocket(token)
   );
 
 
-
-
-
-
   /*
   ========================================
   ZUSTAND STORE
@@ -138,11 +117,6 @@ export function connectSocket(token)
   */
   const chat =
     useChatStore.getState();
-
-
-
-
-
 
   /*
   ========================================
@@ -164,11 +138,6 @@ export function connectSocket(token)
     }
 
   );
-
-
-
-
-
 
 
   /*
@@ -196,11 +165,6 @@ export function connectSocket(token)
   );
 
 
-
-
-
-
-
   /*
   ========================================
   DISCONNECTED
@@ -224,12 +188,6 @@ export function connectSocket(token)
     }
 
   );
-
-
-
-
-
-
 
 
   /*
@@ -256,13 +214,6 @@ export function connectSocket(token)
 
   );
 
-
-
-
-
-
-
-
   /*
   ========================================
   RECONNECTED
@@ -282,13 +233,6 @@ export function connectSocket(token)
     }
 
   );
-
-
-
-
-
-
-
 
   /*
   ========================================
@@ -310,13 +254,6 @@ export function connectSocket(token)
 
   );
 
-
-
-
-
-
-
-
   /*
   ========================================
   RECEIVE MESSAGE
@@ -331,9 +268,6 @@ export function connectSocket(token)
 
       if (!message)
         return;
-
-
-
 
       /*
       ====================================
@@ -352,13 +286,6 @@ export function connectSocket(token)
 
   );
 
-
-
-
-
-
-
-
   /*
   ========================================
   MESSAGE SENT
@@ -376,9 +303,6 @@ export function connectSocket(token)
       if (!message)
         return;
 
-
-
-
       chat.appendMessage(
 
         message.conversationId,
@@ -390,12 +314,6 @@ export function connectSocket(token)
     }
 
   );
-
-
-
-
-
-
 
 
   /*
@@ -417,13 +335,6 @@ export function connectSocket(token)
     }
 
   );
-
-
-
-
-
-
-
 
   /*
   ========================================
@@ -485,6 +396,37 @@ export function connectSocket(token)
 
   /*
   ========================================
+  MESSAGE EDITED
+  ========================================
+  */
+  socket.on(
+
+    "message_edited",
+
+    (data = {}) =>
+    {
+
+      chat.updateEditedMessage(
+
+        data.conversationId,
+
+        data.messageId,
+
+        data.message,
+
+        data.isEdited,
+
+        data.editedAt
+
+      );
+
+    }
+
+  );
+
+
+  /*
+  ========================================
   MESSAGE REACTION UPDATED
   ========================================
   */
@@ -531,9 +473,6 @@ export function connectSocket(token)
         return;
       }
 
-
-
-
       chat.setTyping(
 
         conversationId,
@@ -547,12 +486,6 @@ export function connectSocket(token)
     }
 
   );
-
-
-
-
-
-
 
 
   /*
@@ -595,20 +528,9 @@ export function connectSocket(token)
 
   );
 
-
-
-
-
   return socket;
 
 }
-
-
-
-
-
-
-
 
 
 /*
@@ -631,14 +553,6 @@ export function disconnectSocket()
   }
 
 }
-
-
-
-
-
-
-
-
 
 /*
 ========================================
@@ -668,14 +582,6 @@ export function joinConversation(
 
 }
 
-
-
-
-
-
-
-
-
 /*
 ========================================
 SEND MESSAGE
@@ -702,13 +608,6 @@ export function emitSendMessage(
   }
 
 }
-
-
-
-
-
-
-
 
 
 /*
@@ -738,14 +637,6 @@ export function emitTypingStart(
 
 }
 
-
-
-
-
-
-
-
-
 /*
 ========================================
 TYPING STOP
@@ -772,14 +663,6 @@ export function emitTypingStop(
   }
 
 }
-
-
-
-
-
-
-
-
 
 /*
 ========================================
@@ -844,6 +727,7 @@ export function emitMarkConversationRead(
     );
   }
 }
+
 
 
 /*

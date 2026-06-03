@@ -733,6 +733,115 @@ Adds / updates / removes reaction
 
 
         /*
+===================================
+EDIT MESSAGE
+===================================
+*/
+        socket.on(
+
+            "edit_message",
+
+            async (payload = {}) =>
+            {
+
+                try
+                {
+
+                    const {
+                        messageId,
+                        newMessage
+                    } = payload;
+
+                    if (
+                        !messageId ||
+                        !newMessage?.trim()
+                    )
+                    {
+                        return;
+                    }
+
+                    const message =
+                        await Message.findById(
+                            messageId
+                        );
+
+                    if (!message)
+                    {
+                        return;
+                    }
+
+                    /*
+                    ==========================
+                    ONLY SENDER CAN EDIT
+                    ==========================
+                    */
+                    if (
+                        String(message.senderId) !==
+                        String(userId)
+                    )
+                    {
+                        return;
+                    }
+
+                    /*
+                    ==========================
+                    UPDATE MESSAGE
+                    ==========================
+                    */
+                    message.message =
+                        encryptMessage(
+                            newMessage
+                        );
+
+                    message.isEdited = true;
+
+                    message.editedAt =
+                        new Date();
+
+                    await message.save();
+
+                    /*
+                    ==========================
+                    REALTIME UPDATE
+                    ==========================
+                    */
+                    io.to(
+                        message.conversationId.toString()
+                    ).emit(
+                        "message_edited",
+                        {
+                            messageId,
+                            conversationId:
+                                message.conversationId,
+
+                            message:
+                                newMessage,
+
+                            isEdited: true,
+
+                            editedAt:
+                                message.editedAt
+                        }
+                    );
+
+                }
+
+                catch (error)
+                {
+
+                    console.log(
+                        "EDIT MESSAGE ERROR:",
+                        error.message
+                    );
+
+                }
+
+            }
+
+        );
+
+
+        /*
         ====================================
         DELETE MESSAGE
         ====================================

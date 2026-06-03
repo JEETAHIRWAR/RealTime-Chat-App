@@ -244,6 +244,36 @@ export const useChatStore = create((set) => ({
     }),
 
 
+  updateEditedMessage: (
+    convId,
+    messageId,
+    message,
+    isEdited,
+    editedAt
+  ) =>
+    set((s) =>
+    ({
+      messagesByConv:
+      {
+        ...s.messagesByConv,
+
+        [convId]:
+          (s.messagesByConv[convId] || [])
+            .map((m) =>
+              getId(m)?.toString() ===
+                messageId?.toString()
+                ? {
+                  ...m,
+                  message,
+                  isEdited,
+                  editedAt
+                }
+                : m
+            )
+      }
+    })),
+
+
   deleteMessage: (
     messageId,
     deleteForEveryone
