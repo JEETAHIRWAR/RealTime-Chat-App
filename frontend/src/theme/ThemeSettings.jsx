@@ -116,10 +116,10 @@ export default function ThemeSettings() {
   };
 
   return (
-    <div className="space-y-5">
-      <section className="glass-surface rounded-3xl border border-[var(--color-border)] p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
+    <div className="w-full min-w-0 space-y-5 overflow-hidden">
+      <section className="glass-surface min-w-0 overflow-hidden rounded-3xl border border-[var(--color-border)] p-4 sm:p-5">
+        <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 text-[var(--color-secondary)]">
               <Sparkles size={18} />
               <span className="text-xs font-semibold uppercase tracking-[0.2em]">
@@ -136,7 +136,7 @@ export default function ThemeSettings() {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex shrink-0 flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
@@ -163,7 +163,7 @@ export default function ThemeSettings() {
           </div>
         )}
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {themes.map((theme) => {
             const previewed = activeThemeId === theme.id;
             const saved = savedThemeId === theme.id;
@@ -172,7 +172,7 @@ export default function ThemeSettings() {
               <motion.div
                 key={theme.id}
                 whileHover={{ y: -3 }}
-                className={`rounded-2xl border p-3 transition ${
+                className={`flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border p-3 transition ${
                   previewed
                     ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-[var(--shadow-card)]"
                     : "border-[var(--color-border)] bg-[var(--color-elevated)]/70 hover:bg-[var(--color-hover)]"
@@ -181,7 +181,7 @@ export default function ThemeSettings() {
                 <button
                   type="button"
                   onClick={() => previewTheme(theme.id)}
-                  className="w-full text-left"
+                  className="min-w-0 flex-1 text-left"
                 >
                   <div
                     className="mb-3 h-24 overflow-hidden rounded-2xl border border-[var(--color-border)] p-3"
@@ -205,18 +205,18 @@ export default function ThemeSettings() {
                     />
                   </div>
 
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">
                         {theme.name}
                       </div>
 
-                      <div className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                      <div className="mt-1 line-clamp-2 text-xs text-[var(--color-muted-fg)]">
                         {theme.description}
                       </div>
                     </div>
 
-                    <div className="flex gap-1">
+                    <div className="flex shrink-0 flex-wrap justify-end gap-1">
                       {saved && (
                         <span className="rounded-full border border-[var(--color-success-border)] bg-[var(--color-success-soft)] px-2 py-1 text-[10px] font-semibold text-[var(--color-success)]">
                           Current
@@ -250,7 +250,7 @@ export default function ThemeSettings() {
 
       <form
         onSubmit={createCustomTheme}
-        className="glass-surface rounded-3xl border border-[var(--color-border)] p-5"
+        className="glass-surface min-w-0 overflow-hidden rounded-3xl border border-[var(--color-border)] p-4 sm:p-5"
       >
         <div className="flex items-center gap-2">
           <Palette size={18} className="text-[var(--color-secondary)]" />
@@ -259,7 +259,7 @@ export default function ThemeSettings() {
           </h2>
         </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-medium">
               Theme Name
@@ -275,7 +275,7 @@ export default function ThemeSettings() {
           {customFields.map((field) => (
             <label
               key={field.key}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-elevated)]/70 p-3"
+              className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-elevated)]/70 p-3"
             >
               <span className="text-sm font-medium">
                 {field.label}
@@ -297,7 +297,7 @@ export default function ThemeSettings() {
         </Button>
       </form>
 
-      <section className="glass-surface rounded-3xl border border-[var(--color-border)] p-5">
+      <section className="glass-surface min-w-0 overflow-hidden rounded-3xl border border-[var(--color-border)] p-4 sm:p-5">
         <div className="flex items-center gap-2">
           <Image size={18} className="text-[var(--color-secondary)]" />
           <h2 className="text-lg font-semibold">
@@ -309,7 +309,7 @@ export default function ThemeSettings() {
           Wallpaper is fixed behind the scroll layer so only messages move.
         </p>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {wallpaperOptions.map((option) => {
             const active = wallpaper === option.id;
 
@@ -319,14 +319,14 @@ export default function ThemeSettings() {
                 type="button"
                 whileHover={{ y: -2 }}
                 onClick={() => setWallpaper(option.id)}
-                className={`rounded-2xl border p-3 text-left transition ${
+                className={`min-w-0 rounded-2xl border p-3 text-left transition ${
                   active
                     ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                     : "border-[var(--color-border)] bg-[var(--color-elevated)]/70 hover:bg-[var(--color-hover)]"
                 }`}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium">
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <span className="min-w-0 truncate font-medium">
                     {option.name}
                   </span>
 
@@ -344,7 +344,7 @@ export default function ThemeSettings() {
         </div>
 
         {wallpaper === "custom" && (
-          <div className="mt-4 grid gap-2 md:grid-cols-[1fr_auto]">
+          <div className="mt-4 grid min-w-0 grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
             <Input
               value={wallpaperImage}
               onChange={(e) => setWallpaperImage(e.target.value)}

@@ -511,7 +511,7 @@ export default function ProfilePage()
                 </div>
               ) : (
                 <div div className="grid gap-2">
-                  <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+                  <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
                     <Input
                       type="tel"
                       value={phone}
@@ -538,7 +538,7 @@ export default function ProfilePage()
                   </div>
 
                   {phoneOtpSent && (
-                    <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+                    <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
                       <Input
                         value={phoneOtp}
                         onChange={(e) =>
@@ -726,18 +726,18 @@ export default function ProfilePage()
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[var(--color-bg)] text-[var(--color-fg)]">
-      <div className="mx-auto flex max-w-6xl flex-col px-4 py-5">
-        <div className="mb-6 flex items-center gap-3">
+    <div className="h-[100dvh] w-full overflow-y-auto overflow-x-hidden bg-[var(--color-bg)] text-[var(--color-fg)]">
+      <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col px-3 py-5 sm:px-4 lg:px-6">
+        <div className="mb-6 flex min-w-0 items-center gap-3">
           <button
             type="button"
             onClick={() => navigate("/chat")}
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--color-muted)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-[var(--color-muted)]"
           >
             <ArrowLeft size={20} />
           </button>
 
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-bold">
               Profile Settings
             </h1>
@@ -748,8 +748,8 @@ export default function ProfilePage()
           </div>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-sm">
+        <div className="grid min-w-0 gap-5 lg:grid-cols-[20rem_minmax(0,1fr)]">
+          <div className="w-full min-w-0 rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-sm lg:w-80 lg:shrink-0">
             <div className="space-y-2">
               {sections.map((item) =>
               {
@@ -792,7 +792,7 @@ export default function ProfilePage()
             </div>
           </div>
 
-          <div>
+          <div className="min-w-0 overflow-hidden">
             {renderContent()}
           </div>
         </div>

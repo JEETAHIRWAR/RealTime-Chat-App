@@ -55,7 +55,7 @@ export default function ChatPage()
 
   return (
     <div
-      className="fixed left-0 top-0 flex w-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-fg)]"
+      className="fixed inset-x-0 top-0 flex w-full overflow-hidden bg-[var(--color-bg)] text-[var(--color-fg)]"
       style={{
         height: `${viewport.height}px`,
         transform: `translateY(${viewport.offsetTop}px)`,
