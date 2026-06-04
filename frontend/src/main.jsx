@@ -4,23 +4,22 @@ import { BrowserRouter } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Toaster } from "sonner";
 import App from "./App.jsx";
+import { ThemeProvider, initializeTheme } from "@/theme/useTheme";
 import "./styles.css";
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-// Restore theme preference
-const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-  document.documentElement.classList.add("dark");
-}
+initializeTheme();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={googleClientId}>
-      <BrowserRouter>
-        <App />
-        <Toaster position="top-right" richColors />
-      </BrowserRouter>
+      <ThemeProvider>
+        <BrowserRouter>
+          <App />
+          <Toaster position="top-right" richColors />
+        </BrowserRouter>
+      </ThemeProvider>
     </GoogleOAuthProvider>
   </React.StrictMode>
 );

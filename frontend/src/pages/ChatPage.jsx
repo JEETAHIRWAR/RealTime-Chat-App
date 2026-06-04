@@ -55,7 +55,7 @@ export default function ChatPage()
 
   return (
     <div
-      className="fixed left-0 top-0 flex w-screen overflow-hidden bg-[var(--color-bg)]"
+      className="fixed left-0 top-0 flex w-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-fg)]"
       style={{
         height: `${viewport.height}px`,
         transform: `translateY(${viewport.offsetTop}px)`,
@@ -64,7 +64,7 @@ export default function ChatPage()
       {!sidebarHidden && (
         <div
           className={`${conversationId ? "hidden md:flex" : "flex"
-            } min-h-0 shrink-0 md:w-80 w-full`}
+            } min-h-0 w-full shrink-0 md:w-[22rem]`}
         >
           <Sidebar
             onHideSidebar={() => setSidebarHidden(true)}
@@ -76,7 +76,7 @@ export default function ChatPage()
         <button
           type="button"
           onClick={() => setSidebarHidden(false)}
-          className="absolute left-4 top-24 z-50 hidden h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg hover:bg-[var(--color-muted)] md:flex"
+          className="glass-surface absolute left-4 top-24 z-50 hidden h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-[var(--color-hover)] hover:text-[var(--color-fg)] md:flex"
           title="Show sidebar"
         >
           <PanelLeftOpen size={17} />

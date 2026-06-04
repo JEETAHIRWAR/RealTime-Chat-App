@@ -9,8 +9,10 @@ import
 import
 {
   ArrowLeft,
+  Circle,
   MessageSquare,
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { useNavigate } from "react-router-dom";
 
@@ -479,9 +481,13 @@ export default function ChatWindow({ conversationId })
   if (!conversationId)
   {
     return (
-      <div className="hidden min-h-0 flex-1 items-center justify-center md:flex">
-        <div className="flex flex-col items-center gap-3 text-center text-[var(--color-muted-fg)]">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-primary)]">
+      <div className="hidden min-h-0 flex-1 items-center justify-center bg-[var(--color-bg)] md:flex">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-surface flex max-w-sm flex-col items-center gap-3 rounded-3xl border border-[var(--color-border)] p-8 text-center text-[var(--color-muted-fg)]"
+        >
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--color-primary-soft)] text-[var(--color-secondary)] shadow-[var(--shadow-card)]">
             <MessageSquare size={28} />
           </div>
 
@@ -492,7 +498,7 @@ export default function ChatWindow({ conversationId })
           <div className="max-w-xs text-sm">
             Pick a chat from the sidebar or search for someone to start a new conversation.
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -500,28 +506,34 @@ export default function ChatWindow({ conversationId })
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-bg)]">
       {/* Header */}
-      <div className="relative z-30 flex shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-card)] px-3 py-3 md:px-5">
+      <div className="glass-surface relative z-30 flex shrink-0 items-center gap-3 border-b border-[var(--color-border)] px-3 py-3 md:px-5">
         <button
           type="button"
           onClick={() => navigate("/chat")}
-          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--color-muted)] md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-hover)] hover:text-[var(--color-fg)] md:hidden"
         >
           <ArrowLeft size={20} />
         </button>
 
-        <Avatar
-          name={other.name}
-          src={other.avatar}
-          size={40}
-          online={isOnline}
-        />
+        <div className="relative">
+          <Avatar
+            name={other.name}
+            src={other.avatar}
+            size={44}
+            online={isOnline}
+          />
+        </div>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate font-semibold">
+          <div className="truncate text-[15px] font-semibold">
             {other.name || "Conversation"}
           </div>
 
-          <div className="truncate text-xs text-[var(--color-muted-fg)]">
+          <div className="flex items-center gap-1.5 truncate text-xs text-[var(--color-muted-fg)]">
+            <Circle
+              size={7}
+              className={isOnline || isTyping ? "fill-[var(--color-success)] text-[var(--color-success)]" : "fill-[var(--color-muted-fg)] text-[var(--color-muted-fg)]"}
+            />
             {isTyping
               ? "typing..."
               : isOnline
@@ -532,63 +544,69 @@ export default function ChatWindow({ conversationId })
       </div>
 
       {/* Messages */}
-      <div
-        ref={scrollerRef}
-        onScroll={(e) =>
-        {
-          setActiveReactionMessage(null);
-          onScroll(e);
-        }}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 pb-3 md:px-6"
-      >
-        {loadingOlder && (
-          <div className="mb-3 flex justify-center">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
-          </div>
-        )}
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="chat-wallpaper-layer absolute inset-0 z-0" aria-hidden="true" />
 
-        {loading ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
-          </div>
-        ) : (
-          <div className="mx-auto flex min-h-full max-w-3xl flex-col gap-2">
-            {messages.map((m) =>
-            {
-              const senderId =
-                m.senderId?._id ||
-                m.senderId ||
-                m.sender?.id ||
-                m.sender?._id;
-
-              const isMe =
-                senderId?.toString() ===
-                (user?.id || user?._id)?.toString();
-
-              return (
-                <MessageBubble
-                  key={
-                    m.id ||
-                    m._id ||
-                    m.tempId
-                  }
-                  message={m}
-                  isMe={isMe}
-                  activeReactionMessage={activeReactionMessage}
-                  setActiveReactionMessage={setActiveReactionMessage}
-                />
-              );
-            })}
-
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl rounded-bl-md bg-[var(--color-bubble-them)]">
-                  <TypingIndicator />
-                </div>
+        <div
+          ref={scrollerRef}
+          onScroll={(e) =>
+          {
+            setActiveReactionMessage(null);
+            onScroll(e);
+          }}
+          className="relative z-10 h-full min-h-0 overflow-y-auto overscroll-contain px-3 py-5 pb-4 md:px-8"
+        >
+          {loadingOlder && (
+            <div className="mb-4 flex justify-center">
+              <div className="rounded-full border border-[var(--color-border)] bg-[var(--color-menu)]/80 px-3 py-1 text-xs text-[var(--color-muted-fg)] shadow-[var(--shadow-card)] backdrop-blur-xl">
+                Loading older messages...
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-secondary)] border-t-transparent" />
+            </div>
+          ) : (
+            <div className="mx-auto flex min-h-full max-w-4xl flex-col gap-2.5">
+              {messages.map((m) =>
+              {
+                const senderId =
+                  m.senderId?._id ||
+                  m.senderId ||
+                  m.sender?.id ||
+                  m.sender?._id;
+
+                const isMe =
+                  senderId?.toString() ===
+                  (user?.id || user?._id)?.toString();
+
+                return (
+                  <MessageBubble
+                    key={
+                      m.id ||
+                      m._id ||
+                      m.tempId
+                    }
+                    message={m}
+                    isMe={isMe}
+                    activeReactionMessage={activeReactionMessage}
+                    setActiveReactionMessage={setActiveReactionMessage}
+                  />
+                );
+              })}
+
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="rounded-3xl rounded-bl-md border border-[var(--color-border)] bg-[var(--color-bubble-them)]/95 shadow-[var(--shadow-bubble)] backdrop-blur-xl">
+                    <TypingIndicator />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <MessageInput

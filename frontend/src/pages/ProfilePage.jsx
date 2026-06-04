@@ -20,6 +20,7 @@ import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
+import ThemeSettings from "@/theme/ThemeSettings";
 
 import { userApi } from "@/api/user";
 import { chatApi } from "@/api/chat";
@@ -51,10 +52,10 @@ const sections = [
     description: "Message alerts",
   },
   {
-    id: "appearance",
-    label: "Appearance",
+    id: "themes",
+    label: "Themes",
     icon: Palette,
-    description: "Theme settings",
+    description: "Themes and wallpaper",
   },
 ];
 
@@ -117,11 +118,6 @@ export default function ProfilePage()
 
   const [changingPassword, setChangingPassword] =
     useState(false);
-
-  const [darkMode, setDarkMode] =
-    useState(
-      document.documentElement.classList.contains("dark")
-    );
 
   useEffect(() =>
   {
@@ -377,27 +373,6 @@ export default function ProfilePage()
     }
   };
 
-  const toggleTheme = () =>
-  {
-    const next = !darkMode;
-
-    setDarkMode(next);
-
-    document.documentElement.classList.toggle(
-      "dark",
-      next
-    );
-
-    localStorage.setItem(
-      "theme",
-      next ? "dark" : "light"
-    );
-
-    toast.success(
-      next ? "Dark mode enabled" : "Light mode enabled"
-    );
-  };
-
   const renderProfileSection = () => (
     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-sm">
       <form
@@ -441,16 +416,16 @@ export default function ProfilePage()
           </div>
           <div className="relative flex items-center gap-2">
             {avatar && (
-              <div className="flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-2 py-1 backdrop-blur-sm">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs font-medium text-green-600">
+              <div className="flex items-center gap-2 rounded-full border border-[var(--color-success-border)] bg-[var(--color-success-soft)] px-2 py-1 backdrop-blur-sm">
+                <div className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-success)]" />
+                <span className="text-xs font-medium text-[var(--color-success)]">
                   Avatar Selected
                 </span>
               </div>
             )}
 
             {isFullyVerified && (
-              <div className="flex items-center gap-1 rounded-full bg-blue-500 px-2 py-1 text-white shadow-lg">
+              <div className="flex items-center gap-1 rounded-full bg-[var(--color-primary)] px-2 py-1 text-[var(--color-primary-fg)] shadow-[var(--shadow-card)]">
                 <BadgeCheck size={14} />
                 <span className="text-xs font-medium">Verified</span>
               </div>
@@ -503,7 +478,7 @@ export default function ProfilePage()
               </div>
 
               {user?.email && (
-                <span className="flex items-center gap-1 rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-500">
+                <span className="flex items-center gap-1 rounded-full bg-[var(--color-success-soft)] px-3 py-1 text-xs font-medium text-[var(--color-success)]">
                     <BadgeCheck size={12} />
                     Verified
                   </span>
@@ -523,7 +498,7 @@ export default function ProfilePage()
                 </div>
 
                 {user?.phoneVerified && (
-                  <span className="flex items-center gap-1 rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-500">
+                  <span className="flex items-center gap-1 rounded-full bg-[var(--color-success-soft)] px-3 py-1 text-xs font-medium text-[var(--color-success)]">
                     <BadgeCheck size={12} />
                     Verified
                   </span>
@@ -705,44 +680,6 @@ export default function ProfilePage()
     </div>
   );
 
-  const renderAppearanceSection = () => (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">
-        Appearance
-      </h2>
-
-      <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
-        Customize your app theme.
-      </p>
-
-      <div className="mt-5 flex items-center justify-between rounded-xl border border-[var(--color-border)] p-4">
-        <div>
-          <div className="font-medium">
-            Dark Mode
-          </div>
-
-          <div className="text-sm text-[var(--color-muted-fg)]">
-            Toggle between light and dark theme.
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className={`h-7 w-12 rounded-full p-1 transition ${darkMode
-            ? "bg-[var(--color-primary)]"
-            : "bg-[var(--color-muted)]"
-            }`}
-        >
-          <span
-            className={`block h-5 w-5 rounded-full bg-white transition ${darkMode ? "translate-x-5" : "translate-x-0"
-              }`}
-          />
-        </button>
-      </div>
-    </div>
-  );
-
   const renderContent = () =>
   {
     if (activeSection === "profile")
@@ -755,9 +692,9 @@ export default function ProfilePage()
       return renderPasswordSection();
     }
 
-    if (activeSection === "appearance")
+    if (activeSection === "themes")
     {
-      return renderAppearanceSection();
+      return <ThemeSettings />;
     }
 
     if (activeSection === "privacy")
@@ -827,7 +764,7 @@ export default function ProfilePage()
                     type="button"
                     onClick={() => setActiveSection(item.id)}
                     className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${active
-                      ? "border-[var(--color-primary)] bg-[var(--color-accent)]"
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                       : "border-[var(--color-border)] hover:bg-[var(--color-muted)]"
                       }`}
                   >

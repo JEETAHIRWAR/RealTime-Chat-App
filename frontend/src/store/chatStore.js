@@ -10,6 +10,7 @@ export const useChatStore = create((set) => ({
   onlineUsers: new Set(),
   loadingConversations: false,
   replyMessage: null,
+  editMessage: null,
 
   setConversations: (list = []) =>
     set({ conversations: Array.isArray(list) ? list : [] }),
@@ -20,11 +21,23 @@ export const useChatStore = create((set) => ({
   setReplyMessage: (message) =>
     set({
       replyMessage: message,
+      editMessage: null,
     }),
 
   clearReplyMessage: () =>
     set({
       replyMessage: null,
+    }),
+
+  setEditMessage: (message) =>
+    set({
+      editMessage: message,
+      replyMessage: null,
+    }),
+
+  clearEditMessage: () =>
+    set({
+      editMessage: null,
     }),
 
   setActive: (id) =>

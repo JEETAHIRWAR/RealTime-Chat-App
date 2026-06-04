@@ -747,3 +747,22 @@ export function emitDeleteMessage(
     );
   }
 }
+
+
+/*
+========================================
+EDIT MESSAGE
+========================================
+*/
+export function emitEditMessage(
+  payload = {}
+)
+{
+  if (socket?.connected)
+  {
+    socket.emit(
+      "edit_message",
+      payload
+    );
+  }
+}

@@ -1,0 +1,175 @@
+:root,
+:root.dark,
+:root[data-theme="ocean-blue"] {
+  --color-primary: #3B82F6;
+  --color-secondary: #60A5FA;
+  --color-bg: #0B1120;
+  --color-card: #111827;
+  --color-border: #1F2937;
+  --color-fg: #F9FAFB;
+  --color-muted: #182235;
+  --color-muted-fg: #94A3B8;
+  --color-bubble-me: #1D4ED8;
+  --color-bubble-them: #172033;
+  --color-success: #22C55E;
+  --color-danger: #EF4444;
+  --color-warning: #F59E0B;
+
+  --color-sidebar: color-mix(in srgb, var(--color-bg) 72%, var(--color-card));
+  --color-elevated: color-mix(in srgb, var(--color-card) 86%, var(--color-secondary) 14%);
+  --color-input: color-mix(in srgb, var(--color-card) 88%, var(--color-bg));
+  --color-input-fg: var(--color-fg);
+  --color-input-placeholder: var(--color-muted-fg);
+  --color-menu: color-mix(in srgb, var(--color-card) 90%, var(--color-bg));
+  --color-menu-fg: var(--color-fg);
+  --color-menu-hover: color-mix(in srgb, var(--color-muted) 76%, var(--color-primary) 12%);
+  --color-hover: color-mix(in srgb, var(--color-muted) 82%, var(--color-primary) 10%);
+  --color-primary-hover: color-mix(in srgb, var(--color-primary) 82%, white 18%);
+  --color-primary-fg: #F9FAFB;
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  --color-primary-border: color-mix(in srgb, var(--color-primary) 34%, transparent);
+  --color-secondary-soft: color-mix(in srgb, var(--color-secondary) 18%, transparent);
+  --color-overlay: #020617F2;
+  --color-overlay-soft: color-mix(in srgb, var(--color-fg) 10%, transparent);
+  --color-overlay-muted: color-mix(in srgb, var(--color-fg) 6%, transparent);
+  --color-scrim: #020617B8;
+  --color-bubble-me-fg: #FFFFFF;
+  --color-bubble-them-fg: var(--color-fg);
+  --color-bubble-meta: color-mix(in srgb, var(--color-muted-fg) 88%, var(--color-fg));
+  --color-bubble-hover: color-mix(in srgb, var(--color-bubble-them) 84%, var(--color-primary) 10%);
+  --color-bubble-soft: color-mix(in srgb, var(--color-fg) 9%, transparent);
+  --color-danger-hover: color-mix(in srgb, var(--color-danger) 84%, white 16%);
+  --color-danger-soft: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  --color-danger-fg: #FFFFFF;
+  --color-success-soft: color-mix(in srgb, var(--color-success) 15%, transparent);
+  --color-success-border: color-mix(in srgb, var(--color-success) 34%, transparent);
+  --color-reaction-bg: color-mix(in srgb, var(--color-menu) 88%, transparent);
+  --color-reaction-selected: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  --color-reaction-border: color-mix(in srgb, var(--color-fg) 13%, transparent);
+  --color-status-seen: var(--color-secondary);
+
+  --radius: 1rem;
+  --shadow-card: 0 18px 60px #00000033;
+  --shadow-bubble: 0 10px 28px #00000026;
+  --shadow-elevated: 0 28px 80px #0000004a;
+  --shadow-menu: 0 22px 58px #00000059;
+}
+
+:root[data-theme="arctic-white"] {
+  --color-primary-fg: #FFFFFF;
+  --color-overlay: #F8FAFCF2;
+  --color-scrim: #0F172A99;
+  --color-bubble-me-fg: #0F172A;
+}
+
+.glass-surface {
+  background: color-mix(in srgb, var(--color-card) 86%, transparent);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.chat-wallpaper-layer {
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.chat-wallpaper-layer::before,
+.chat-wallpaper-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chat-wallpaper-layer::before {
+  opacity: 0.54;
+  background-repeat: repeat;
+  background-position: center;
+}
+
+.chat-wallpaper-layer::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 70%, transparent), var(--color-bg)),
+    radial-gradient(circle at 50% 110%, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 45%);
+}
+
+:root[data-wallpaper="none"] .chat-wallpaper-layer::before {
+  opacity: 0;
+}
+
+:root[data-wallpaper="gradient"] .chat-wallpaper-layer::before {
+  opacity: 0.7;
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--color-primary) 28%, transparent), transparent 32%),
+    radial-gradient(circle at 82% 22%, color-mix(in srgb, var(--color-secondary) 20%, transparent), transparent 34%),
+    radial-gradient(circle at 50% 72%, color-mix(in srgb, var(--color-card) 82%, transparent), transparent 44%);
+}
+
+:root[data-wallpaper="dots"] .chat-wallpaper-layer::before {
+  opacity: 0.3;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--color-fg) 26%, transparent) 0 1px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+:root[data-wallpaper="lines"] .chat-wallpaper-layer::before {
+  opacity: 0.24;
+  background-image:
+    linear-gradient(135deg, transparent 0 48%, color-mix(in srgb, var(--color-fg) 18%, transparent) 49% 50%, transparent 51% 100%);
+  background-size: 34px 34px;
+}
+
+:root[data-wallpaper="mesh"] .chat-wallpaper-layer::before {
+  opacity: 0.5;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-fg) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--color-fg) 8%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--color-primary) 25%, transparent), transparent 36%);
+  background-size: 56px 56px, 56px 56px, cover;
+}
+
+:root[data-wallpaper="dark-blur"] .chat-wallpaper-layer::before,
+:root[data-wallpaper="blue-blur"] .chat-wallpaper-layer::before,
+:root[data-wallpaper="purple-blur"] .chat-wallpaper-layer::before,
+:root[data-wallpaper="green-blur"] .chat-wallpaper-layer::before {
+  filter: blur(22px);
+  transform: scale(1.08);
+}
+
+:root[data-wallpaper="dark-blur"] .chat-wallpaper-layer::before {
+  opacity: 0.55;
+  background:
+    radial-gradient(circle at 22% 24%, #334155, transparent 32%),
+    radial-gradient(circle at 78% 70%, #111827, transparent 36%);
+}
+
+:root[data-wallpaper="blue-blur"] .chat-wallpaper-layer::before {
+  opacity: 0.55;
+  background:
+    radial-gradient(circle at 22% 24%, #2563EB, transparent 34%),
+    radial-gradient(circle at 78% 70%, #60A5FA, transparent 36%);
+}
+
+:root[data-wallpaper="purple-blur"] .chat-wallpaper-layer::before {
+  opacity: 0.55;
+  background:
+    radial-gradient(circle at 22% 24%, #7C3AED, transparent 34%),
+    radial-gradient(circle at 78% 70%, #C084FC, transparent 36%);
+}
+
+:root[data-wallpaper="green-blur"] .chat-wallpaper-layer::before {
+  opacity: 0.55;
+  background:
+    radial-gradient(circle at 22% 24%, #10B981, transparent 34%),
+    radial-gradient(circle at 78% 70%, #86EFAC, transparent 36%);
+}
+
+:root[data-wallpaper="custom"] .chat-wallpaper-layer::before {
+  opacity: 0.34;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-bg) 58%, transparent), color-mix(in srgb, var(--color-bg) 58%, transparent)),
+    var(--chat-wallpaper-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}

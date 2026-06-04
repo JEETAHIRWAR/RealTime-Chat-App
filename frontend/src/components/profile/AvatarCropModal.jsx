@@ -42,12 +42,12 @@ export default function AvatarCropModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col bg-black text-white">
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-[var(--color-overlay)] text-[var(--color-primary-fg)]">
       <div className="flex h-14 items-center justify-between px-4">
         <button
           type="button"
           onClick={onClose}
-          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10"
+          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--color-overlay-soft)]"
         >
           <X size={22} />
         </button>
@@ -59,7 +59,7 @@ export default function AvatarCropModal({
         <button
           type="button"
           onClick={handleDone}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-success)] text-[var(--color-primary-fg)]"
         >
           <Check size={22} />
         </button>

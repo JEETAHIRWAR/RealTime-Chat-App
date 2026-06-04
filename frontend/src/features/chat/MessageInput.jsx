@@ -6,7 +6,9 @@ import
   Paperclip,
   X,
   FileText,
-  Image as ImageIcon, XCircle,
+  Image as ImageIcon,
+  XCircle,
+  Edit3,
 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 
@@ -17,6 +19,7 @@ import
 {
   emitTypingStart,
   emitTypingStop,
+  emitEditMessage,
 } from "@/socket/socket";
 
 function formatFileSize(size = 0)
@@ -48,36 +51,80 @@ export default function MessageInput({
   const replyMessage =
     useChatStore((s) => s.replyMessage);
 
+  const editMessage =
+    useChatStore((s) => s.editMessage);
+
   const clearReplyMessage =
     useChatStore((s) => s.clearReplyMessage);
+
+  const clearEditMessage =
+    useChatStore((s) => s.clearEditMessage);
 
   const typingRef = useRef(false);
   const timerRef = useRef(null);
   const taRef = useRef(null);
   const fileRef = useRef(null);
   const emojiRef = useRef(null);
+  const previewUrlRef = useRef("");
 
   useEffect(() =>
   {
-    setText("");
-    setShowEmoji(false);
-    setSelectedFile(null);
-    setPreviewUrl("");
-    setCaption("");
+    previewUrlRef.current = previewUrl;
+  }, [previewUrl]);
+
+  useEffect(() =>
+  {
+    queueMicrotask(() =>
+    {
+      setText("");
+      setShowEmoji(false);
+      setSelectedFile(null);
+      setPreviewUrl("");
+      setCaption("");
+    });
+
     typingRef.current = false;
+    clearEditMessage();
 
     return () =>
     {
       if (timerRef.current) clearTimeout(timerRef.current);
 
-      if (previewUrl)
+      if (previewUrlRef.current)
       {
-        URL.revokeObjectURL(previewUrl);
+        URL.revokeObjectURL(previewUrlRef.current);
       }
 
       emitTypingStop({ conversationId });
     };
-  }, [conversationId]);
+  }, [conversationId, clearEditMessage]);
+
+  useEffect(() =>
+  {
+    if (!editMessage)
+    {
+      return;
+    }
+
+    queueMicrotask(() =>
+    {
+      setText(
+        editMessage.message ||
+        editMessage.content ||
+        ""
+      );
+
+      setShowEmoji(false);
+      setSelectedFile(null);
+      setPreviewUrl("");
+      setCaption("");
+    });
+
+    requestAnimationFrame(() =>
+    {
+      taRef.current?.focus();
+    });
+  }, [editMessage]);
 
   useEffect(() =>
   {
@@ -157,6 +204,34 @@ export default function MessageInput({
 
     if (!value || disabled) return;
 
+    if (editMessage)
+    {
+      const messageId =
+        editMessage._id ||
+        editMessage.id;
+
+      if (messageId)
+      {
+        emitEditMessage({
+          messageId,
+          newMessage: value,
+        });
+      }
+
+      clearEditMessage();
+      setText("");
+      setShowEmoji(false);
+      typingRef.current = false;
+      emitTypingStop({ conversationId });
+
+      setTimeout(() =>
+      {
+        taRef.current?.focus();
+      }, 50);
+
+      return;
+    }
+
     onSend(value, replyMessage);
 
     clearReplyMessage();
@@ -184,7 +259,7 @@ export default function MessageInput({
   {
     const file = e.target.files?.[0];
 
-    if (!file || disabled) return;
+    if (!file || disabled || editMessage) return;
 
     setSelectedFile(file);
     setCaption("");
@@ -215,7 +290,7 @@ export default function MessageInput({
 
   const sendSelectedFile = () =>
   {
-    if (!selectedFile || disabled) return;
+    if (!selectedFile || disabled || editMessage) return;
 
     onFileSend?.(
       selectedFile,
@@ -255,15 +330,34 @@ export default function MessageInput({
     setShowEmoji((prev) => !prev);
   };
 
+  const cancelEdit = () =>
+  {
+    clearEditMessage();
+    setText("");
+    setShowEmoji(false);
+    typingRef.current = false;
+    emitTypingStop({ conversationId });
+
+    setTimeout(() =>
+    {
+      taRef.current?.focus();
+    }, 50);
+  };
+
+  const previewText =
+    editMessage?.message ||
+    editMessage?.content ||
+    "";
+
   return (
     <>
       {selectedFile && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/90 text-white">
-          <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
+        <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-overlay)] text-[var(--color-fg)] backdrop-blur-2xl">
+          <div className="glass-surface flex h-16 items-center gap-3 border-b border-[var(--color-reaction-border)] px-5">
             <button
               type="button"
               onClick={closePreview}
-              className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10"
+              className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--color-overlay-soft)]"
             >
               <X size={24} />
             </button>
@@ -281,8 +375,8 @@ export default function MessageInput({
                 className="max-h-[70vh] max-w-[80vw] rounded-xl object-contain"
               />
             ) : (
-              <div className="flex max-w-md flex-col items-center gap-4 rounded-2xl bg-white/5 p-10 text-center">
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/10">
+              <div className="glass-surface flex max-w-md flex-col items-center gap-4 rounded-3xl border border-[var(--color-border)] p-10 text-center">
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-[var(--color-overlay-soft)]">
                   {isSelectedImage ? (
                     <ImageIcon size={48} />
                   ) : (
@@ -295,7 +389,7 @@ export default function MessageInput({
                     No preview available
                   </div>
 
-                  <div className="mt-1 text-sm text-white/70">
+                  <div className="mt-1 text-sm text-[var(--color-muted-fg)]">
                     {formatFileSize(selectedFile.size)} ·{" "}
                     {selectedFile.type || "file"}
                   </div>
@@ -304,13 +398,13 @@ export default function MessageInput({
             )}
           </div>
 
-          <div className="border-t border-white/10 p-4">
+          <div className="glass-surface border-t border-[var(--color-reaction-border)] p-4">
             <div className="mx-auto flex max-w-3xl items-center gap-3">
               <input
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="Add a caption..."
-                className="flex-1 rounded-xl bg-white/10 px-4 py-3 text-sm outline-none placeholder:text-white/50"
+                className="flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-input)] px-4 py-3 text-sm outline-none placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-primary)]"
               />
 
               <Button
@@ -326,11 +420,38 @@ export default function MessageInput({
         </div>
       )}
 
-      <div className="relative z-30 shrink-0 border-t border-[var(--color-border)] bg-[var(--color-card)]">
+      <div className="glass-surface relative z-30 shrink-0 border-t border-[var(--color-border)]">
+        {editMessage && (
+          <div className="flex items-center gap-3 border-b border-[var(--color-border)] px-3 py-2">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-primary-soft)] text-[var(--color-secondary)]">
+              <Edit3 size={17} />
+            </div>
+
+            <div className="min-w-0 flex-1 rounded-2xl border-l-4 border-[var(--color-primary)] bg-[var(--color-muted)]/80 px-3 py-2">
+              <div className="text-xs font-semibold text-[var(--color-secondary)]">
+                Editing message
+              </div>
+
+              <div className="truncate text-xs text-[var(--color-muted-fg)]">
+                {previewText || "Message"}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={cancelEdit}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-hover)] hover:text-[var(--color-fg)]"
+              aria-label="Cancel edit"
+            >
+              <XCircle size={18} />
+            </button>
+          </div>
+        )}
+
         {replyMessage && (
           <div className="flex items-center gap-3 border-b border-[var(--color-border)] px-3 py-2">
-            <div className="min-w-0 flex-1 rounded-xl border-l-4 border-[var(--color-primary)] bg-[var(--color-muted)] px-3 py-2">
-              <div className="text-xs font-semibold text-[var(--color-primary)]">
+            <div className="min-w-0 flex-1 rounded-2xl border-l-4 border-[var(--color-primary)] bg-[var(--color-muted)]/80 px-3 py-2">
+              <div className="text-xs font-semibold text-[var(--color-secondary)]">
                 Replying to
               </div>
 
@@ -344,7 +465,7 @@ export default function MessageInput({
             <button
               type="button"
               onClick={clearReplyMessage}
-              className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--color-muted)]"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-hover)] hover:text-[var(--color-fg)]"
             >
               <XCircle size={18} />
             </button>
@@ -359,17 +480,19 @@ export default function MessageInput({
           <div ref={emojiRef} className="relative">
             {showEmoji && (
               <div className="absolute bottom-14 left-0 z-50 max-w-[90vw]">
-                <EmojiPicker
-                  theme="dark"
-                  onEmojiClick={addEmoji}
-                />
+                <div className="overflow-hidden rounded-3xl border border-[var(--color-border)] shadow-[var(--shadow-menu)]">
+                  <EmojiPicker
+                    theme="dark"
+                    onEmojiClick={addEmoji}
+                  />
+                </div>
               </div>
             )}
 
             <button
               type="button"
               onPointerDown={toggleEmojiPicker}
-              className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
+              className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-hover)] hover:text-[var(--color-fg)]"
               tabIndex={-1}
             >
               <Smile size={18} />
@@ -379,7 +502,8 @@ export default function MessageInput({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
+            disabled={!!editMessage}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-muted-fg)] hover:bg-[var(--color-hover)] hover:text-[var(--color-fg)] disabled:cursor-not-allowed disabled:opacity-40"
             tabIndex={-1}
           >
             <Paperclip size={18} />
@@ -399,16 +523,17 @@ export default function MessageInput({
             value={text}
             onChange={(e) => handleChange(e.target.value)}
             onKeyDown={onKey}
-            placeholder="Type a message..."
+            placeholder={editMessage ? "Edit message..." : "Type a message..."}
             disabled={disabled}
-            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+            className="max-h-32 min-h-[46px] flex-1 resize-none rounded-3xl border border-[var(--color-border)] bg-[var(--color-input)] px-4 py-3 text-sm shadow-[var(--shadow-card)] outline-none transition placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
           />
 
           <Button
             type="submit"
             size="icon"
-            className="h-10 w-10 rounded-full"
+            className="h-11 w-11 rounded-full shadow-[var(--shadow-card)]"
             disabled={!text.trim() || disabled}
+            aria-label={editMessage ? "Update message" : "Send message"}
           >
             <Send size={16} />
           </Button>

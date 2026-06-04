@@ -14,10 +14,10 @@ export default function Avatar({ src, name = "?", size = 40, online, className }
   return (
     <div className={cn("relative inline-block shrink-0", className)} style={{ width: size, height: size }}>
       {src ? (
-        <img src={src} alt={name} className="h-full w-full rounded-full object-cover" />
+        <img src={src} alt={name} className="h-full w-full rounded-full border border-[var(--color-reaction-border)] object-cover shadow-[var(--shadow-card)]" />
       ) : (
         <div
-          className="flex h-full w-full items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-primary)] font-semibold"
+          className="flex h-full w-full items-center justify-center rounded-full border border-[var(--color-reaction-border)] bg-[var(--color-primary-soft)] font-semibold text-[var(--color-secondary)] shadow-[var(--shadow-card)]"
           style={{ fontSize: size * 0.4 }}
         >
           {initials(name) || "?"}
@@ -27,7 +27,7 @@ export default function Avatar({ src, name = "?", size = 40, online, className }
         <span
           className={cn(
             "absolute bottom-0 right-0 block rounded-full ring-2 ring-[var(--color-card)]",
-            online ? "bg-green-500" : "bg-[var(--color-muted-fg)]"
+            online ? "bg-[var(--color-success)]" : "bg-[var(--color-muted-fg)]"
           )}
           style={{ width: size * 0.28, height: size * 0.28 }}
         />
