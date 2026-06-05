@@ -399,27 +399,54 @@ export function connectSocket(token)
   MESSAGE EDITED
   ========================================
   */
+  const handleMessageUpdated = (data = {}) =>
+  {
+    chat.updateEditedMessage(
+
+      data.conversationId,
+
+      data.messageId,
+
+      data.message,
+
+      data.isEdited,
+
+      data.editedAt,
+
+      data.editExpiresAt,
+
+      data.deleteForEveryoneExpiresAt
+
+    );
+
+  };
+
+  socket.on(
+
+    "message_updated",
+
+    handleMessageUpdated
+
+  );
+
   socket.on(
 
     "message_edited",
 
-    (data = {}) =>
+    handleMessageUpdated
+
+  );
+
+  socket.on(
+
+    "message_action_error",
+
+    (error = {}) =>
     {
-
-      chat.updateEditedMessage(
-
-        data.conversationId,
-
-        data.messageId,
-
-        data.message,
-
-        data.isEdited,
-
-        data.editedAt
-
-      );
-
+      if (error.status === 403)
+      {
+        chat.clearEditMessage();
+      }
     }
 
   );

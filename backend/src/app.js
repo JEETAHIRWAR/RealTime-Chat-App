@@ -77,6 +77,8 @@ const io = new Server(server, {
 
 io.use(socketAuth);
 
+app.set("io", io);
+
 socketHandler(io);
 
 /*

@@ -37,6 +37,8 @@ const REACTION_BAR_HEIGHT = 48;
 const ACTION_MENU_WIDTH = 224;
 const ACTION_MENU_HEIGHT = 292;
 const POPUP_GAP = 8;
+const EDIT_MESSAGE_WINDOW_MS = 15 * 60 * 1000;
+const DELETE_FOR_EVERYONE_WINDOW_MS = 60 * 60 * 1000;
 
 function formatTime(ts) {
   if (!ts) return "";
@@ -61,6 +63,32 @@ function getMessageId(message) {
   return message?._id || message?.id || message?.tempId;
 }
 
+function getActionExpiryTime(message, expiryKey, fallbackWindowMs) {
+  const explicitExpiry = new Date(message?.[expiryKey]).getTime();
+
+  if (!Number.isNaN(explicitExpiry)) {
+    return explicitExpiry;
+  }
+
+  const createdAt = new Date(message?.createdAt).getTime();
+
+  if (Number.isNaN(createdAt)) {
+    return 0;
+  }
+
+  return createdAt + fallbackWindowMs;
+}
+
+function isActionAvailable(message, expiryKey, fallbackWindowMs, now) {
+  const expiryTime = getActionExpiryTime(
+    message,
+    expiryKey,
+    fallbackWindowMs
+  );
+
+  return expiryTime > 0 && now <= expiryTime;
+}
+
 export default function MessageBubble({
   message,
   isMe,
@@ -75,6 +103,7 @@ export default function MessageBubble({
   const longPressTimer = useRef(null);
 
   const [showMenu, setShowMenu] = useState(false);
+  const [actionNow, setActionNow] = useState(() => Date.now());
   const [popupPosition, setPopupPosition] = useState({
     top: null,
     left: null,
@@ -109,7 +138,29 @@ export default function MessageBubble({
     repliedMessage?.fileName ||
     (repliedMessage?.messageType === "image" ? "Photo" : "");
 
-  const canEdit = isMe && !!text && !isFile && !isImage;
+  const canEdit =
+    isMe &&
+    !!text &&
+    !isFile &&
+    !isImage &&
+    message.canEdit !== false &&
+    isActionAvailable(
+      message,
+      "editExpiresAt",
+      EDIT_MESSAGE_WINDOW_MS,
+      actionNow
+    );
+
+  const canDeleteForEveryone =
+    isMe &&
+    message.canDeleteForEveryone !== false &&
+    isActionAvailable(
+      message,
+      "deleteForEveryoneExpiresAt",
+      DELETE_FOR_EVERYONE_WINDOW_MS,
+      actionNow
+    );
+
   const clipboardValue = text || fileUrl || message.fileName || "";
 
   const reactionPreview = useMemo(() => {
@@ -217,6 +268,16 @@ export default function MessageBubble({
   };
 
   useEffect(() => {
+    if (!isMe) return undefined;
+
+    const interval = setInterval(() => {
+      setActionNow(Date.now());
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isMe]);
+
+  useEffect(() => {
     if (!isActive) return undefined;
 
     updatePopupPosition();
@@ -312,6 +373,11 @@ export default function MessageBubble({
   };
 
   const handleDeleteForEveryone = () => {
+    if (!canDeleteForEveryone) {
+      closePopup();
+      return;
+    }
+
     emitDeleteMessage({
       messageId: message._id || message.id,
       deleteForEveryone: true,
@@ -371,8 +437,7 @@ export default function MessageBubble({
       label: "Edit",
       icon: Edit3,
       onClick: handleEdit,
-      show: true,
-      disabled: !canEdit,
+      show: canEdit,
     },
     {
       label: "React",
@@ -390,7 +455,7 @@ export default function MessageBubble({
       label: "Delete For Everyone",
       icon: Trash2,
       onClick: handleDeleteForEveryone,
-      show: isMe,
+      show: canDeleteForEveryone,
       danger: true,
     },
   ];
@@ -577,6 +642,9 @@ export default function MessageBubble({
 
                 <div className="absolute bottom-1 right-1 flex items-center gap-1 rounded-full bg-[var(--color-scrim)] px-2 py-0.5 text-[10px] text-[var(--color-primary-fg)]">
                 <span>{formatTime(message.createdAt)}</span>
+                {message.isEdited && (
+                  <span>{"\u00A0\u00B7 edited"}</span>
+                )}
                 {renderStatus()}
               </div>
             </a>
@@ -613,18 +681,15 @@ export default function MessageBubble({
           {text && !isImage && (
             <div className="whitespace-pre-wrap break-words pr-12">
               {text}
-
-              {message.isEdited && (
-                  <span className="ml-2 text-[10px] text-[var(--color-bubble-meta)]">
-                  edited
-                </span>
-              )}
             </div>
           )}
 
           {!isImage && (
               <div className="float-right -mb-0.5 ml-2 mt-1 flex h-4 items-center justify-end gap-1 text-[10px] font-medium leading-none text-[var(--color-bubble-meta)]">
               <span>{formatTime(message.createdAt)}</span>
+              {message.isEdited && (
+                <span>{"\u00B7 edited"}</span>
+              )}
               {renderStatus()}
             </div>
           )}

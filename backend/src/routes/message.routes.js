@@ -3,7 +3,9 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    getMessages
+    getMessages,
+    editMessage,
+    deleteMessage
 } = require("../controllers/message.controller");
 
 const {
@@ -19,6 +21,28 @@ router.get(
     "/:conversationId",
     protect,
     getMessages
+);
+
+/*
+========================================
+EDIT MESSAGE
+========================================
+*/
+router.patch(
+    "/:messageId",
+    protect,
+    editMessage
+);
+
+/*
+========================================
+DELETE MESSAGE
+========================================
+*/
+router.delete(
+    "/:messageId",
+    protect,
+    deleteMessage
 );
 
 module.exports = router;

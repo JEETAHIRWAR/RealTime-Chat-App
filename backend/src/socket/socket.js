@@ -14,6 +14,10 @@ const {
 } = require("../utils/encryption");
 
 const {
+    getMessageActionPolicy
+} = require("../utils/messagePolicy");
+
+const {
 
     addUserSocket,
     removeUserSocket,
@@ -70,6 +74,37 @@ const safeDecrypt = (value) =>
 
     }
 
+};
+
+const emitForbidden = (
+    socket,
+    message
+) =>
+{
+    socket.emit(
+        "message_action_error",
+        {
+            status: 403,
+            message
+        }
+    );
+};
+
+const emitToMessageParticipants = (
+    io,
+    message,
+    eventName,
+    payload
+) =>
+{
+    io.to([
+        message.conversationId.toString(),
+        message.senderId.toString(),
+        message.receiverId.toString()
+    ]).emit(
+        eventName,
+        payload
+    );
 };
 
 
@@ -402,6 +437,20 @@ const socketHandler = (io) =>
                         reactions: messageData.reactions || [],
 
                         replyTo: replyMessage,
+
+                        isEdited:
+                            messageData.isEdited,
+
+                        editedAt:
+                            messageData.editedAt,
+
+                        editExpiresAt:
+                            getMessageActionPolicy(messageData)
+                                .editExpiresAt,
+
+                        deleteForEveryoneExpiresAt:
+                            getMessageActionPolicy(messageData)
+                                .deleteForEveryoneExpiresAt,
 
                         createdAt:
                             messageData.createdAt
@@ -770,6 +819,26 @@ EDIT MESSAGE
                         return;
                     }
 
+                    if (message.deletedForEveryone)
+                    {
+                        emitForbidden(
+                            socket,
+                            "Deleted messages cannot be edited."
+                        );
+
+                        return;
+                    }
+
+                    if (message.messageType !== "text")
+                    {
+                        emitForbidden(
+                            socket,
+                            "Only text messages can be edited."
+                        );
+
+                        return;
+                    }
+
                     /*
                     ==========================
                     ONLY SENDER CAN EDIT
@@ -780,6 +849,27 @@ EDIT MESSAGE
                         String(userId)
                     )
                     {
+                        emitForbidden(
+                            socket,
+                            "You can only edit your own messages."
+                        );
+
+                        return;
+                    }
+
+                    const actionPolicy =
+                        getMessageActionPolicy(
+                            message,
+                            new Date()
+                        );
+
+                    if (!actionPolicy.canEdit)
+                    {
+                        emitForbidden(
+                            socket,
+                            "Message can no longer be edited."
+                        );
+
                         return;
                     }
 
@@ -805,23 +895,38 @@ EDIT MESSAGE
                     REALTIME UPDATE
                     ==========================
                     */
-                    io.to(
-                        message.conversationId.toString()
-                    ).emit(
+                    const updatePayload = {
+                        messageId,
+                        conversationId:
+                            message.conversationId,
+
+                        message:
+                            newMessage,
+
+                        isEdited: true,
+
+                        editedAt:
+                            message.editedAt,
+
+                        editExpiresAt:
+                            actionPolicy.editExpiresAt,
+
+                        deleteForEveryoneExpiresAt:
+                            actionPolicy.deleteForEveryoneExpiresAt
+                    };
+
+                    emitToMessageParticipants(
+                        io,
+                        message,
+                        "message_updated",
+                        updatePayload
+                    );
+
+                    emitToMessageParticipants(
+                        io,
+                        message,
                         "message_edited",
-                        {
-                            messageId,
-                            conversationId:
-                                message.conversationId,
-
-                            message:
-                                newMessage,
-
-                            isEdited: true,
-
-                            editedAt:
-                                message.editedAt
-                        }
+                        updatePayload
                     );
 
                 }
@@ -887,6 +992,21 @@ EDIT MESSAGE
                         String(userId)
                     )
                     {
+                        const actionPolicy =
+                            getMessageActionPolicy(
+                                message,
+                                new Date()
+                            );
+
+                        if (!actionPolicy.canDeleteForEveryone)
+                        {
+                            emitForbidden(
+                                socket,
+                                "Delete for everyone time limit exceeded."
+                            );
+
+                            return;
+                        }
 
                         message.isDeleted = true;
 
@@ -897,9 +1017,9 @@ EDIT MESSAGE
 
                         await message.save();
 
-                        io.to(
-                            message.conversationId.toString()
-                        ).emit(
+                        emitToMessageParticipants(
+                            io,
+                            message,
                             "message_deleted",
                             {
                                 messageId,
@@ -911,6 +1031,16 @@ EDIT MESSAGE
 
                         return;
 
+                    }
+
+                    if (deleteForEveryone)
+                    {
+                        emitForbidden(
+                            socket,
+                            "You can only delete your own messages for everyone."
+                        );
+
+                        return;
                     }
 
                     /*

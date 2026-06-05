@@ -262,7 +262,9 @@ export const useChatStore = create((set) => ({
     messageId,
     message,
     isEdited,
-    editedAt
+    editedAt,
+    editExpiresAt,
+    deleteForEveryoneExpiresAt
   ) =>
     set((s) =>
     ({
@@ -279,7 +281,13 @@ export const useChatStore = create((set) => ({
                   ...m,
                   message,
                   isEdited,
-                  editedAt
+                  editedAt,
+                  editExpiresAt:
+                    editExpiresAt ??
+                    m.editExpiresAt,
+                  deleteForEveryoneExpiresAt:
+                    deleteForEveryoneExpiresAt ??
+                    m.deleteForEveryoneExpiresAt
                 }
                 : m
             )
